@@ -7,6 +7,7 @@ import { join, dirname, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { lookup } from 'node:dns/promises'
 import archiver from 'archiver'
 import sharp from 'sharp'
 
@@ -673,7 +674,10 @@ imageGenRoutes.post('/backups/:filename/restore', async c => {
   const backupPath = join(BACKUPS, filename)
   if (!existsSync(backupPath)) return c.json({ error: 'Not found' }, 404)
   try {
-    await execFileAsync('tar', ['-xzf', backupPath, '-C', ROOT])
+    // --no-same-owner/--no-same-permissions: a snapshot is a plain file in a bind-mounted
+    // directory, so it isn't necessarily one this app wrote — don't let its recorded
+    // ownership or mode bits carry into the extracted files.
+    await execFileAsync('tar', ['-xzf', backupPath, '-C', ROOT, '--no-same-owner', '--no-same-permissions'])
     return c.json({ ok: true })
   } catch (err: any) {
     return c.json({ error: err.message }, 500)
@@ -1210,7 +1214,19 @@ function toStoredSchema(schema: any): StoredTargetSchema | undefined {
   return Object.keys(out).length ? out : undefined
 }
 
-function exportMapPath(id: string) { return join(EXPORTS, `${id}.json`) }
+// Export-map ids arrive straight off the wire — from the :id route param, and from the
+// request body on create, where the caller picks the id outright. They're interpolated
+// into a filename, so this is the choke point that has to stop traversal: an id like
+// "../../src/products/sites" makes join() resolve cleanly *outside* EXPORTS, turning map
+// create/delete into an arbitrary .json write/unlink (and, since /:id/download puts the
+// id in a Content-Disposition header, keeping the class tight closes that too). Real ids
+// are already slugs or "<template-key>-<suffix>", so nothing legitimate needs more than
+// this — same character class sanitizeId() uses.
+function safeMapId(id: string): string {
+  return String(id ?? '').replace(/[^a-zA-Z0-9_-]/g, '')
+}
+
+function exportMapPath(id: string) { return join(EXPORTS, `${safeMapId(id)}.json`) }
 
 function loadExportMaps(): ExportMap[] {
   if (!existsSync(EXPORTS)) return []
@@ -1292,8 +1308,16 @@ function applyExportMap(map: Pick<ExportMap, 'fields' | 'siteBaseUrl' | 'imageEx
 
 // Writes val into obj following a dotted path, building nested objects as needed
 // (mirrors getNestedValue's dot-notation reading, applied to the output side)
+// A field's target path is caller-supplied (a saved map's fields, or the raw fields array
+// POSTed to /exports/preview), so a target of "__proto__.x" would walk this loop straight
+// onto Object.prototype — the "is it already an object?" guard passes for __proto__, so it
+// isn't replaced with a fresh {} — and assign a property visible on every object in the
+// process from then on. Nothing legitimate maps to these keys, so drop the write entirely.
+const UNSAFE_PATH_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
 function setNestedValue(obj: Record<string, any>, path: string, val: any) {
   const keys = path.split('.')
+  if (keys.some(k => UNSAFE_PATH_KEYS.has(k))) return
   let cur = obj
   for (let i = 0; i < keys.length - 1; i++) {
     const k = keys[i]
@@ -1408,7 +1432,8 @@ imageGenRoutes.post('/exports/templates/:key', c => {
 imageGenRoutes.post('/exports', async c => {
   const body = await c.req.json() as Partial<ExportMap>
   if (!body.name) return c.json({ error: 'name required' }, 400)
-  const id = body.id || slugify(body.name)
+  const id = safeMapId(body.id || slugify(body.name))
+  if (!id) return c.json({ error: 'invalid id' }, 400)
   const now = new Date().toISOString()
   const stored = toStoredSchema(body.targetSchema)
   const map: ExportMap = {
@@ -1422,7 +1447,7 @@ imageGenRoutes.post('/exports', async c => {
 })
 
 imageGenRoutes.put('/exports/:id', async c => {
-  const id = c.req.param('id')
+  const id = safeMapId(c.req.param('id'))
   const existing = loadExportMap(id)
   if (!existing) return c.json({ error: 'Not found' }, 404)
   const body = await c.req.json() as Partial<ExportMap>
@@ -1512,8 +1537,67 @@ Use the real field names from what you find. Output ONLY the JSON object.`
 }
 
 // ── Parse schema from a fetched URL ───────────────────────────────────────
+
+// This endpoint fetches a URL the caller chose, from inside the network the server sits
+// in — the classic SSRF shape. Without these checks it reaches cloud metadata endpoints
+// (169.254.169.254), anything on loopback, and any internal host the container can route
+// to, and hands the response back to the caller via the LLM summary. So: http(s) only,
+// and every address the hostname actually resolves to must be public. Checking the
+// resolved IPs rather than the hostname is what stops a name that deliberately points at
+// a private address, and re-checking each hop below is what stops a public URL that just
+// redirects there.
+function isPrivateAddress(ip: string): boolean {
+  const v4 = ip.split('.')
+  if (v4.length === 4) {
+    const [a, b] = v4.map(Number)
+    if (a === 10 || a === 127 || a === 0) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 192 && b === 168) return true
+    if (a === 169 && b === 254) return true   // link-local — AWS/GCP/Azure metadata
+    if (a === 100 && b >= 64 && b <= 127) return true // carrier-grade NAT
+    return false
+  }
+  const v6 = ip.toLowerCase().replace(/^\[|\]$/g, '')
+  if (v6 === '::1' || v6 === '::') return true
+  if (/^f[cd]/.test(v6)) return true          // unique-local
+  if (v6.startsWith('fe80')) return true      // link-local
+  if (v6.startsWith('::ffff:')) return isPrivateAddress(v6.slice(7)) // v4-mapped
+  return false
+}
+
+async function assertPublicUrl(raw: string): Promise<URL> {
+  let u: URL
+  try { u = new URL(raw) } catch { throw new Error('Invalid URL') }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('Only http(s) URLs are supported')
+  const addrs = await lookup(u.hostname, { all: true }).catch(() => {
+    throw new Error('Could not resolve host')
+  })
+  if (!addrs.length) throw new Error('Could not resolve host')
+  if (addrs.some(a => isPrivateAddress(a.address))) throw new Error('Refusing to fetch a private/internal address')
+  return u
+}
+
+// Redirects are followed by hand so each hop gets the same check — 'follow' would let a
+// public URL bounce us to an internal one with no second look.
+async function fetchPublicUrl(raw: string, hops = 3): Promise<Response> {
+  let target = raw
+  for (let i = 0; i <= hops; i++) {
+    const u = await assertPublicUrl(target)
+    const res = await fetch(u, {
+      signal: AbortSignal.timeout(8000),
+      redirect: 'manual',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    })
+    if (res.status < 300 || res.status >= 400) return res
+    const loc = res.headers.get('location')
+    if (!loc) return res
+    target = new URL(loc, u).toString()
+  }
+  throw new Error('Too many redirects')
+}
+
 async function fetchAndParseSchema(url: string): Promise<any> {
-  const pageRes = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'Mozilla/5.0' } })
+  const pageRes = await fetchPublicUrl(url)
   if (!pageRes.ok) throw new Error(`URL returned ${pageRes.status}`)
   const html = await pageRes.text()
   // strip tags, keep text
@@ -1757,7 +1841,7 @@ imageGenRoutes.post('/exports/:id/run', async c => {
 
 // Bundle the export JSON together with every referenced product image into one zip
 imageGenRoutes.post('/exports/:id/download', async c => {
-  const id = c.req.param('id')
+  const id = safeMapId(c.req.param('id'))
   const map = loadExportMap(id)
   if (!map) return c.json({ error: 'Not found' }, 404)
   const { site, categories } = await c.req.json().catch(() => ({})) as { site?: string; categories?: string[] }
