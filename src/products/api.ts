@@ -14,11 +14,16 @@ import sharp from 'sharp'
 const execFileAsync = promisify(execFile)
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const ROOT     = join(__dirname, '../../')
-const CATALOG  = process.env.CATALOG_PATH || join(ROOT, 'data/catalog')
-const IMAGES   = process.env.IMAGES_PATH  || join(ROOT, 'data/images')
-const CONFIG   = join(__dirname, 'config.json')
-const SITES    = join(__dirname, 'sites.json')
+// APP_ROOT is the directory every default data path hangs off, and the base the backup
+// tarball is created relative to (so entries stay recorded as "data/catalog/..." — the
+// paths existing snapshots already use and /backups/:filename/restore extracts back to).
+// It's overridable purely so a test run can point the whole module at a temp directory;
+// nothing in normal operation sets it.
+const ROOT     = process.env.APP_ROOT      || join(__dirname, '../../')
+const CATALOG  = process.env.CATALOG_PATH  || join(ROOT, 'data/catalog')
+const IMAGES   = process.env.IMAGES_PATH   || join(ROOT, 'data/images')
+const CONFIG   = process.env.CONFIG_PATH   || join(__dirname, 'config.json')
+const SITES    = process.env.SITES_PATH    || join(__dirname, 'sites.json')
 const MANIFEST = join(IMAGES, 'generated.json')
 const BACKUPS  = join(ROOT, 'data/backups')
 const EXPORTS  = join(ROOT, 'data/exports')
@@ -1547,7 +1552,18 @@ Use the real field names from what you find. Output ONLY the JSON object.`
 // a private address, and re-checking each hop below is what stops a public URL that just
 // redirects there.
 function isPrivateAddress(ip: string): boolean {
-  const v4 = ip.split('.')
+  const addr = ip.toLowerCase().replace(/^\[|\]$/g, '')
+  // v4-mapped has to be unwrapped *before* the dotted-quad branch below, not after it:
+  // "::ffff:127.0.0.1".split('.') is also 4 long, so it would be taken for IPv4, the
+  // first octet would parse as NaN, no range would match, and a loopback (or metadata)
+  // address would be reported public. Only the dotted form is reachable in practice —
+  // that's what dns.lookup() hands back — so anything else wearing the ::ffff: prefix is
+  // refused outright rather than guessed at.
+  if (addr.startsWith('::ffff:')) {
+    const mapped = addr.slice(7)
+    return mapped.split('.').length === 4 ? isPrivateAddress(mapped) : true
+  }
+  const v4 = addr.split('.')
   if (v4.length === 4) {
     const [a, b] = v4.map(Number)
     if (a === 10 || a === 127 || a === 0) return true
@@ -1557,11 +1573,9 @@ function isPrivateAddress(ip: string): boolean {
     if (a === 100 && b >= 64 && b <= 127) return true // carrier-grade NAT
     return false
   }
-  const v6 = ip.toLowerCase().replace(/^\[|\]$/g, '')
-  if (v6 === '::1' || v6 === '::') return true
-  if (/^f[cd]/.test(v6)) return true          // unique-local
-  if (v6.startsWith('fe80')) return true      // link-local
-  if (v6.startsWith('::ffff:')) return isPrivateAddress(v6.slice(7)) // v4-mapped
+  if (addr === '::1' || addr === '::') return true
+  if (/^f[cd]/.test(addr)) return true        // unique-local
+  if (addr.startsWith('fe80')) return true    // link-local
   return false
 }
 
@@ -1925,3 +1939,19 @@ catalogRoutes.get('/:objectID', c => {
 // (GET / and GET /:objectID).
 catalogRoutes.post('/:objectID/generate', generateImageHandler)
 catalogRoutes.delete('/:objectID/image', deleteImageHandler)
+
+// ── Test surface ──────────────────────────────────────────────────────────────
+// Internals grouped into one export so the unit tests can reach them directly
+// rather than only through HTTP routes. Nothing in the app imports from here —
+// server.ts consumes imageGenRoutes/catalogRoutes only.
+export {
+  slugify, parseTagList, parsePrice, autoPrompt, enrich, emptyFixture,
+  sitesSharingCategory, fixtureFilename, nextObjectID, getAllCatRefs, getAllCats,
+  loadSites, saveSites, loadConfig, loadFixture, saveFixture, loadManifest,
+  safeFilename, sanitizeId, safeMapId,
+  setNestedValue, getNestedValue, resolveSourceValue, resolveFileUrl,
+  transformValue, applyExportMap, extractPaths, toStoredSchema,
+  isPrivateAddress, assertPublicUrl, whitenBackground,
+  getAllCatalogItems, loadExportMaps, loadExportMap, EXPORT_TEMPLATES,
+}
+export type { CatalogItem, CatalogFixture, SiteDef, ExportField, ExportMap }
