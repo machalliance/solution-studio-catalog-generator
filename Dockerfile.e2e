@@ -1,0 +1,19 @@
+# Browser test image. Debian rather than the Alpine base the app uses, because that is
+# what Playwright supports and ships browser builds for — the app itself is exercised
+# over HTTP, so the OS underneath the browser is not part of what's being tested.
+FROM node:26-bookworm-slim
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+# Installs the Chromium build matching the @playwright/test version npm just resolved,
+# plus its system libraries.
+RUN npx playwright install --with-deps chromium
+
+COPY tsconfig.json playwright.config.ts ./
+COPY src ./src
+COPY test ./test
+
+CMD ["npx", "playwright", "test"]

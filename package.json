@@ -5,7 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "node_modules/.bin/tsx src/server.ts"
+    "start": "node_modules/.bin/tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:docker": "docker compose -f docker-compose.test.yml run --rm unit",
+    "test:e2e:docker": "docker compose -f docker-compose.test.yml run --rm e2e"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
@@ -15,8 +21,10 @@
     "tsx": "^4.19.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/archiver": "^6.0.3",
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
   }
 }

@@ -12,3 +12,7 @@ CLAUDE.md
 # src/products/api.ts), not meant to ship with the repo so a fresh checkout starts clean.
 src/products/config.json
 src/products/sites.json
+
+# Playwright output
+test-results/
+playwright-report/
