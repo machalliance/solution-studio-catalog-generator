@@ -3,19 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Product Catalog Generator</title>
+<title>Product Catalog Generator — MACH Alliance</title>
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAD5klEQVRYCe1WX0hbVxj/JcYYY02DdvinbkVW3AbWFioUSikVbX0pFXxxFAJdi0KFtYm1ETVQlVps0Ri3Uq3MVcceNoQVbF9qKNTWh1LZcAzGoK52E8dWJeqtf9KYeHa/m3pzb5P0nrQPfekH995zfuf7ft/vnnz35NMx0fAOTf8Oc0up3wswKH+CjY0N+Hw+JSSNMzMzodPpovDXAcRDfEqzWCwwGo1KCKAi3LTp6Wkm5mFbzDr5SjaAlZeXs0AgsOmm+RwfH2fJhggH8en1YAUFBWxhYUEVHyUgO1PP2KPt8jX69Tb6Spjb7VYFxpuEQiFWXFzMvnFZZQ7i2/uZUeKhl1SaZhEe3peCYwdNaGtrw9zcnHr7YswGBwexsfwrvjiaFmM1GtIUQCFdZ7dibWUJLpcrmkGBCIKA5uZm9NRZIW45l3G57fzQgDOfp2FgYACTk5Nxidvb23Fol4ADe14ptLgRAJcAinedTMcHVga73R6TbmpqCv19X+HyGUvM9XggtwBLmh7tpy0YGxvD8PBwFF99fT3OVhnxUVZS1NrrAE0Bdx6+kONPiIW199NkOJ1O+P1+Gfd6vfjl4W04bVtkbFQRJ4MxBpoCbt5bw92JsAgqLM85K/56+hSdnZ0SXTAYhMPhwJUvLTCbwofV70+C6P1pOUa6aEhTAIU43EsIhsLBB3YbUXXEjI6ODszOzqKvrw9Ww2NUHTbL7A7PIkRdXMYl4Lc/13H95opMeFl8WxZaRW1tLVpbW9Aj7srmSX3rgR+820+EXALI8cJ1AT4hfLZToTlt6RgZGcGx/WtSXZBPYJ3hnGeJhtzGLcBozkJL/3OZ+LxYcIUfJ+NSbeSz6/lhGY9nOPf+JRO3gKamJnzv1YMKjIwK7kH/NmRlhD+7/3whXPw2LLC0tPQlvfaDW0B2djYaGppg716UWa3pkfDmawKEFYaioiJUV1fLPlqDCIOWp7hOp+CT+TyM3I+cART28x/ruHF7VWLweDxISuI/jBISkJKSgq6uLtT3LEkFRxmppbW7F8XmA6isrERJSYkkhPeWkAAiraiowI5PDoEKjuxH7yrGJwMwmUzy4SQtcN4SFkC83d3d6PjOj+l/Qmi4Kkip6urqkJ+fz5k24vZGAgoLC3HcVoP9p57h739DyM3NRWNjY4Q1kZGyPYrXE4p8TPwHVLqy+fl5lpGRIbVZQ0NDqjXyFetQ7is3e0LiebUlU3XFeXl5aGlpxcTERNQ75OTkqDDqlHt7e6XLZrOp1srKylBTcxozMzMqnCapqakqTEfSVUiCE2q99bz9VwzutxYQgzMh6I2KMKEMGs7vBfwPdywY7pPCkpIAAAAASUVORK5CYII=">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&family=Space+Grotesk:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --font: 'DM Sans', -apple-system, sans-serif;
-  --font-display: 'Newsreader', Georgia, serif;
-  --ink: #0F0F0D; --stone: #F5F4F1; --hairline: #E3E1DC;
-  --muted: #767670; --white: #FFFFFF; --radius: 4px;
-  --accent: #1E2B4A; --accent-hover: #2A3C6A;
-  --green: #16a34a; --red: #dc2626;
+  /* MACH Alliance brand: Helvetica Neue for body, Montserrat for display,
+     ink #231F20 + yellow #FFCB1B. Yellow is a highlight only — it never carries
+     white text, which is why --accent stays the ink. */
+  --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-display: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  --ink: #231F20; --stone: #F5F4F1; --hairline: #E3E1DC;
+  --muted: #65655F; --white: #FFFFFF; --radius: 4px;
+  --brand-yellow: #FFCB1B; --brand-yellow-soft: #FFF6D6;
+  --accent: #231F20; --accent-hover: #3D3739;
+  --green: #137334; --red: #b91c1c;
 }
 body { font-family: var(--font); background: var(--stone); color: var(--ink); font-size: 13px; line-height: 1.5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
@@ -25,7 +30,11 @@ nav {
   padding: 0 20px 0 20px; display: flex; align-items: stretch; height: 44px; flex-shrink: 0;
   border-bottom: 1px solid rgba(255,255,255,0.07); gap: 0;
 }
-.nav-logo { font-size: 13px; font-weight: 600; color: white; letter-spacing: -0.02em; align-self: center; margin-right: 8px; white-space: nowrap; cursor: pointer; }
+.nav-brand { align-self: center; display: flex; align-items: center; margin-right: 10px; }
+.nav-brand img { height: 20px; width: auto; display: block; }
+.nav-brand-sep { align-self: center; width: 1px; height: 18px; background: rgba(255,255,255,0.18); margin-right: 10px; }
+.nav-logo { font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: white; letter-spacing: -0.02em; align-self: center; margin-right: 8px; white-space: nowrap; cursor: pointer;
+  background: none; border: none; padding: 0; }
 .nav-logo span { color: rgba(255,255,255,0.4); font-weight: 400; }
 .nav-site-select {
   align-self: center; margin-right: 16px; font-family: var(--font); font-size: 11.5px; font-weight: 500;
@@ -33,17 +42,37 @@ nav {
   border-radius: 20px; padding: 4px 10px; cursor: pointer; outline: none; max-width: 160px;
 }
 .nav-site-select:hover { background: rgba(255,255,255,0.14); }
+.nav-site-select:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: 2px; }
 .nav-site-select option { background: #1a1a17; color: white; }
+.skip-link {
+  position: absolute; left: 8px; top: -60px; z-index: 100;
+  background: var(--brand-yellow); color: var(--ink); font-family: var(--font-display);
+  font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: var(--radius);
+  text-decoration: none; transition: top 0.15s;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--ink); outline-offset: 2px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+[tabindex="-1"]:focus { outline: none; }
 .nav-tabs { display: flex; align-items: stretch; flex: 1; }
 .tab-btn {
-  font-family: var(--font); font-size: 12px; font-weight: 500;
+  font-family: var(--font-display); font-size: 12px; font-weight: 500;
   background: none; border: none; border-bottom: 2px solid transparent;
-  color: rgba(255,255,255,0.45); padding: 0 16px;
+  color: rgba(255,255,255,0.62); padding: 0 16px;
   cursor: pointer; transition: color 0.15s, border-color 0.15s;
   white-space: nowrap; display: flex; align-items: center;
 }
-.tab-btn:hover { color: rgba(255,255,255,0.85); }
-.tab-btn.active { color: white; border-bottom-color: white; }
+.tab-btn:hover { color: rgba(255,255,255,0.92); }
+.tab-btn.active { color: white; border-bottom-color: var(--brand-yellow); }
+/* Tabs sit flush against each other, so their ring goes inside; the brand link and logo
+   have room around them, so theirs sits outside where it reads at full contrast against
+   the dark bar (a -2px offset drew over the logo artwork and measured ~1.8:1). */
+.tab-btn:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: -2px; }
+.nav-logo:focus-visible, .nav-brand:focus-visible {
+  outline: 2px solid var(--brand-yellow); outline-offset: 2px; border-radius: 2px;
+}
 .tab-settings { margin-left: auto; padding: 0 18px; font-size: 15px; }
 
 /* PRODUCTS TOOLBAR */
@@ -56,11 +85,11 @@ nav {
   padding: 5px 14px; border-radius: 20px; border: none; cursor: pointer;
   color: white; white-space: nowrap; background: var(--accent);
   display: inline-flex; align-items: center; gap: 6px;
-  box-shadow: 0 1px 2px rgba(30,43,74,0.28);
+  box-shadow: 0 1px 2px rgba(35,31,32,0.28);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
-.toolbar-btn:hover  { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(30,43,74,0.3); }
-.toolbar-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(30,43,74,0.28); }
+.toolbar-btn:hover  { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(35,31,32,0.3); }
+.toolbar-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(35,31,32,0.28); }
 .toolbar-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 .toolbar-btn svg { flex-shrink: 0; }
 
@@ -106,12 +135,12 @@ nav {
 /* ── Dev view (default) ─────────────────────────────────────────── */
 #devView {
   --dv-ink: #14151A; --dv-bg: #FAFAF9; --dv-white: #FFFFFF; --dv-hairline: #E5E4E0; --dv-muted: #6B6B70;
-  --dv-accent: #4F46E5; --dv-accent-ink: #FFFFFF;
-  --dv-code-bg: #1E1F29; --dv-code-key: #8AB4F8; --dv-code-str: #C3E88D; --dv-code-num: #F78C6C; --dv-code-punc: #6E7080; --dv-code-muted: #565866;
-  background: var(--dv-bg); color: var(--dv-ink); min-height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px;
+  --dv-accent: #231F20; --dv-accent-ink: #FFFFFF;
+  --dv-code-bg: #1E1F29; --dv-code-key: #8AB4F8; --dv-code-str: #C3E88D; --dv-code-num: #F78C6C; --dv-code-punc: #8A8CA0; --dv-code-muted: #9294A8;
+  background: var(--dv-bg); color: var(--dv-ink); min-height: 100%; font-family: var(--font); font-size: 14px;
 }
 #devView .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 32px 80px; }
-#devView .headline { font-family: 'Space Grotesk'; font-size: clamp(28px, 4.2vw, 42px); font-weight: 700; letter-spacing: -0.015em; line-height: 1.08; max-width: 640px; }
+#devView .headline { font-family: var(--font-display); font-size: clamp(28px, 4.2vw, 42px); font-weight: 700; letter-spacing: -0.015em; line-height: 1.08; max-width: 640px; }
 #devView .sub { margin-top: 14px; font-size: 15px; color: var(--dv-muted); max-width: 560px; line-height: 1.6; }
 
 #devView .hero-grid { margin-top: 32px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start; }
@@ -119,7 +148,7 @@ nav {
 #devView .code-card { background: var(--dv-code-bg); border-radius: 10px; overflow: hidden; box-shadow: 0 20px 50px rgba(20,21,26,0.18); }
 #devView .code-chrome { display: flex; align-items: center; gap: 6px; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 #devView .code-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.18); }
-#devView .code-filename { margin-left: 8px; font-family: 'JetBrains Mono'; font-size: 11.5px; color: rgba(255,255,255,0.45); }
+#devView .code-filename { margin-left: 8px; font-family: 'JetBrains Mono'; font-size: 11.5px; color: rgba(255,255,255,0.62); }
 #devView .code-body { font-family: 'JetBrains Mono'; font-size: 12.5px; line-height: 1.7; padding: 16px 18px 20px; color: var(--dv-code-punc); white-space: pre; overflow-x: auto; }
 #devView .code-body .k { color: var(--dv-code-key); }
 #devView .code-body .s { color: var(--dv-code-str); }
@@ -134,19 +163,20 @@ nav {
 
 #devView .section-label { font-family: 'JetBrains Mono'; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dv-muted); margin: 40px 0 14px; }
 #devView .sites-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-#devView .site-card { background: var(--dv-white); border: 1px solid var(--dv-hairline); border-radius: 8px; padding: 16px 18px; text-decoration: none; color: inherit; cursor: pointer; }
-#devView .site-card:hover { border-color: var(--dv-accent); }
+#devView .site-card { background: var(--dv-white); border: 1px solid var(--dv-hairline); border-radius: 8px; padding: 16px 18px; text-decoration: none; color: inherit; cursor: pointer;
+  display: block; width: 100%; text-align: left; font: inherit; }
+#devView .site-card:hover { border-color: var(--brand-yellow); }
 #devView .site-card-id { font-family: 'JetBrains Mono'; font-size: 11px; color: var(--dv-accent); }
-#devView .site-card-label { font-family: 'Space Grotesk'; font-size: 17px; font-weight: 600; margin-top: 4px; }
+#devView .site-card-label { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-top: 4px; }
 #devView .site-card-meta { margin-top: 8px; font-size: 12px; color: var(--dv-muted); }
 
 #devView .actions-row { margin-top: 40px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 #devView .action-btn {
-  font-family: 'DM Sans'; font-size: 13px; font-weight: 600;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
   padding: 11px 20px; border-radius: 8px; border: 1px solid var(--dv-hairline); cursor: pointer;
   color: var(--dv-ink); background: var(--dv-white); text-decoration: none; display: inline-block;
 }
-#devView .action-btn:hover { border-color: var(--dv-accent); }
+#devView .action-btn:hover { border-color: var(--brand-yellow); }
 #devView .action-btn.primary { background: var(--dv-accent); color: var(--dv-accent-ink); border-color: var(--dv-accent); }
 #devView .action-btn.primary:hover { opacity: 0.9; }
 #devView .empty-note { margin-top: 32px; font-size: 14px; color: var(--dv-muted); }
@@ -154,7 +184,7 @@ nav {
 /* ── Demo view ──────────────────────────────────────────────────── */
 #demoView {
   --dm-ink: #0F0F0D; --dm-white: #FFFFFF; --dm-hairline: #E7E5DE; --dm-muted: #767670;
-  display: none; background: var(--dm-white); color: var(--dm-ink); font-family: 'DM Sans', sans-serif;
+  display: none; background: var(--dm-white); color: var(--dm-ink); font-family: var(--font);
 }
 #demoView .hero { position: relative; height: 88vh; min-height: 460px; overflow: hidden; background: #1a1a17; }
 #demoView .hero-slide { position: absolute; inset: 0; opacity: 0; animation: demo-slide-cycle 20s infinite; }
@@ -171,10 +201,12 @@ nav {
 }
 #demoView .hero-scrim { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,10,8,0.78) 0%, rgba(10,10,8,0.15) 45%, rgba(10,10,8,0.35) 100%); }
 #demoView .hero-nav { position: relative; z-index: 2; display: flex; align-items: center; padding: 24px 32px 0; }
-#demoView .hero-logo { font-family: 'DM Sans'; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.04em; text-transform: uppercase; }
+#demoView .hero-brand { height: 22px; width: auto; display: block; margin-right: 12px; }
+#demoView .hero-brand-sep { width: 1px; height: 16px; background: rgba(255,255,255,0.3); margin-right: 12px; }
+#demoView .hero-logo { font-family: var(--font-display); font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.04em; text-transform: uppercase; }
 #demoView .hero-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 32px 56px; }
 #demoView .hero-headline {
-  font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700;
+  font-family: var(--font-display); font-weight: 700;
   font-size: clamp(36px, 7vw, 76px); line-height: 0.98; letter-spacing: -0.01em; color: var(--dm-white);
   max-width: 900px;
 }
@@ -189,7 +221,7 @@ nav {
 }
 #demoView .index-row:first-of-type { border-top: 1px solid var(--dm-hairline); }
 #demoView .index-row-label { display: flex; align-items: baseline; gap: 16px; }
-#demoView .index-row-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.01em; transition: opacity 0.15s; }
+#demoView .index-row-name { font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.01em; transition: opacity 0.15s; }
 #demoView .index-row:hover .index-row-name { opacity: 0.55; }
 #demoView .index-row-cats { font-size: 12.5px; color: var(--dm-muted); }
 #demoView .index-row-count { font-size: 14px; color: var(--dm-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
@@ -197,7 +229,7 @@ nav {
 
 #demoView .demo-actions-row { max-width: 900px; margin: 8px auto 0; padding: 0 32px 80px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 #demoView .demo-action-btn {
-  font-family: 'DM Sans'; font-size: 13px; font-weight: 600;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
   padding: 12px 22px; border-radius: 24px; border: 1px solid var(--dm-ink); cursor: pointer;
   color: var(--dm-ink); background: var(--dm-white); text-decoration: none; display: inline-block;
   transition: background 0.12s, color 0.12s;
@@ -251,7 +283,7 @@ nav {
 }
 .item-card:hover { border-color: #c0bdb8; }
 .item-card.selected { border-color: var(--accent); }
-.item-card.checked { border-color: var(--accent); background: #eff6ff; }
+.item-card.checked { border-color: var(--accent); background: var(--brand-yellow-soft); }
 .item-card.checked.no-image { border-style: solid; }
 .item-cb {
   position: absolute; top: 6px; left: 6px; z-index: 3;
@@ -273,7 +305,7 @@ nav {
   user-select: none;
 }
 .item-thumb .placeholder .ph-icon { font-size: 22px; opacity: 0.3; }
-.item-thumb .placeholder .ph-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #b8a96e; }
+.item-thumb .placeholder .ph-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #736631; }
 .item-thumb .spinner {
   position: absolute; inset: 0; background: rgba(255,255,255,0.85);
   display: flex; align-items: center; justify-content: center; display: none;
@@ -282,7 +314,11 @@ nav {
 .spin { width: 24px; height: 24px; border: 2px solid var(--hairline); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .item-info { padding: 8px 8px 10px; }
-.item-name { font-family: var(--font-display); font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* A <button> now (it is what makes a product selectable by keyboard), so the UA styling is
+   reset back to the plain text it has always looked like. */
+.item-name { font-family: var(--font-display); font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  background: none; border: none; padding: 0; text-align: left; width: 100%; cursor: pointer; }
+.item-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .item-id { font-family: monospace; font-size: 10px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-badges { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
 .badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.04em; }
@@ -391,6 +427,10 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   transition: opacity 0.12s;
 }
 .lightbox-close:hover { opacity: 1; }
+.lightbox-close:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: 2px; }
+.detail-img-btn { display: block; width: 100%; padding: 0; border: none; background: none; cursor: zoom-in; }
+.detail-img-btn img { display: block; width: 100%; }
+.detail-img-btn:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: -2px; }
 @keyframes lightbox-bg-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lightbox-img-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
 
@@ -450,7 +490,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 .creator-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:16px; }
 .creator-card { border:1px solid var(--hairline); border-radius:var(--radius); background:var(--white); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow 0.15s; }
 .creator-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.creator-card-thumb { width:100%; aspect-ratio:1; background:var(--stone); display:flex; align-items:center; justify-content:center; font-size:56px; color:#ddd; position:relative; overflow:hidden; }
+.creator-card-thumb { width:100%; aspect-ratio:1; background:var(--stone); display:flex; align-items:center; justify-content:center; font-size:56px; color:var(--muted); position:relative; overflow:hidden; }
 .creator-card-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .creator-card-thumb .spin { position:absolute; }
 .creator-card-header { display:flex; align-items:center; gap:6px; padding:8px 12px 0; }
@@ -470,16 +510,21 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 </style>
 </head>
 <body>
+<!-- 2.4.1 — first thing in the tab order, visible only while focused, so a keyboard user
+     can jump the nav instead of tabbing through it on every view change. -->
+<a class="skip-link" href="#gridPanel" onclick="event.preventDefault();_focusActiveMain()">Skip to main content</a>
 
 <div class="toast-stack" id="toastStack"></div>
 
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" title="Close">×</button>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview">
+  <button class="lightbox-close" title="Close" aria-label="Close"><span aria-hidden="true">×</span></button>
   <img id="lightboxImg" src="" alt="">
 </div>
 
-<nav>
-  <span class="nav-logo" onclick="showLanding()" title="Home">Product Catalog Generator</span>
+<nav aria-label="Main">
+  <a class="nav-brand" href="https://machalliance.org/" target="_blank" rel="noopener noreferrer" title="MACH Alliance"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODcuMSAxNzYuMiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmZmZmY7fS5jbHMtMntmaWxsOiNmZmNiMWI7fTwvc3R5bGU+PC9kZWZzPjxnIGlkPSJMYXllcl8xLTIiPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMwLjk4LDE3MC4xMWgtMTQuOTFsLTIuNTYsNS4ySDUuMTlsMTQuMDYtMjcuMThoOC42NmwxNC4wNiwyNy4xOGgtOC40M2wtMi41Ni01LjJaTTI4LjIyLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODguMjUsMTY4Ljk0djYuMzdoLTI2LjIxdi0yNy4xOGg3LjkydjIwLjgxaDE4LjI5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEzNC45OCwxNjguOTR2Ni4zN2gtMjYuMjF2LTI3LjE4aDcuOTJ2MjAuODFoMTguMjlaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTU1LjUsMTc1LjMxdi0yNy4xOGg3LjkydjI3LjE4aC03LjkyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTIwOS4yNiwxNzAuMTFoLTE0LjkxbC0yLjU2LDUuMmgtOC4zMWwxNC4wNi0yNy4xOGg4LjY2bDE0LjA2LDI3LjE4aC04LjQzbC0yLjU2LTUuMlpNMjA2LjUxLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjcyLjQ3LDE0OC4xM3YyNy4xOGgtNi45NWwtMTcuNTUtMTcuODZ2MTcuODZoLTcuNjV2LTI3LjE4aDguMzlsMTYuMTEsMTYuNjJ2LTE2LjYyaDcuNjVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzE5LjkzLDE2NS42bDYuOCwzLjVjLTIuNTMsNC04LDcuMTEtMTUuMzQsNy4xMS0xMC4yNSwwLTE3LjE2LTUuMzItMTcuMTYtMTQuNDhzNi45MS0xNC40OCwxNy40Ny0xNC40OGM3LjAzLDAsMTIuNDcsMy4xOCwxNC45MSw3LjA3bC02LjgzLDMuNDljLTEuNzktMi43OS00LjU0LTQuMTEtOC4xOS00LjExLTUuNTksMC05LjMyLDIuODMtOS4zMiw4LjA0czMuNzMsOC4wNCw5LjMyLDguMDRjMy42NSwwLDYuNDUtMS4yNCw4LjM1LTQuMTZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzc2LjU4LDE2OS4yNXY2LjA2aC0yOXYtMjcuMThoMjguNTh2Ni4wNmgtMjAuNzd2NC40NmgxNy4xMnY1Ljc5aC0xNy4xMnY0LjgxaDIxLjJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzg3LjEsNy4yOGwtNS4yNi01LjI2aDBzMCwwLDAsMGgtMjguNjZ2NjEuMjdoLTQ1LjY1VjcuMjhsLTUuMjYtNS4yNmgtMjguNjR2Ny45NWMtNy41OS00LjY3LTE2LjI5LTcuNDQtMjUuNTgtOC4wMWgtNi43MWMtMTEuNTYuNzMtMjIuNDIsNS4wMy0zMS40LDEyLjQyLTkuNTUsNy44Ni0xNi4wNSwxOC41My0xOC43LDMwLjMzbC0yMi43OC0zOS40NS01LjI2LTUuMjYtMzYuNjMsNjMuNDNWNy4xMWwtNS4yNi01LjI2aC0yNi40MWwtMzMuMTMsNTcuMzdMMzEuNjksNy4xMWgwcy01LjI2LTUuMjYtNS4yNi01LjI2aDBzMCwwLDAsMEgwdjEwOS44OWw1LjI2LDUuMjZoMjguNjR2LTQ5Ljc3bDI2Ljc3LDQ2LjM2LDUuMjYsNS4yNywyNi43Ny00Ni4zN3YzOS4yNmw1LjI2LDUuMjZoMzYuMjdsMTEuNDgtMTkuODhoNDMuM2w4LjQ0LDE0LjYyLDUuMjYsNS4yNmgzMC4yOGwtMi0zLjQ3YzYuMDksMi4yNiwxMi41NywzLjQ3LDE5LjE0LDMuNDcsOC4yMiwwLDE2LjIyLTEuODksMjMuNTEtNS4zNHYuMDloMGw1LjI2LDUuMjZoMHMyOC42NCwwLDI4LjY0LDB2LTE5LjgxaDQ1LjY1djE0LjU1bDUuMjYsNS4yNmgyOC42NlY3LjI4aDBaTTE2NS4yNyw2My4yM2wyLjA5LTMuNjEsMi4wOSwzLjYxaC00LjE3Wk0yNzMuNjIsNzkuMDFsLTguNDUtNC44OC0yLjg0LDIuNTJjLTQuODIsNC4yNy0xMS4wMyw2LjYzLTE3LjQ4LDYuNjMtNi4wMywwLTExLjU3LTIuMTQtMTYuMDQtNS42LTIuODYtMy45LTQuNjgtOC42Mi01LjAyLTEzLjc2LS4wNC0uNTktLjA3LTEuMTgtLjA3LTEuNzdzLjAyLTEuMTkuMDctMS44MmMuOTItMTMuNzgsMTIuNDktMjQuNTgsMjYuMzItMjQuNTgsNi40MywwLDEyLjYzLDIuMzQsMTcuNDUsNi41OWwyLjg0LDIuNSwzLjIyLTEuODZ2MzYuMDNaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzU4LjQzLDcuMjh2NjEuMjdoLTYxLjQzVjcuMjhoLTE4LjEydjEzLjMzYy04LjE2LTcuNjgtMTguOTItMTIuNjUtMzAuODQtMTMuNGgtNi4zOGMtMTAuNzUuNjctMjAuNTUsNC43OC0yOC4zOCwxMS4yMi0xMS4wNiw5LjExLTE4LjEyLDIyLjkxLTE4LjEyLDM4LjM2LDAsMy44OS40NSw3LjY3LDEuMywxMS4zbC0yNC4xOS00MS44OS05LjA3LTE1LjctOS4wNywxNS43LTI0LjQyLDQyLjI4LTEwLjQ1LDE4LjExLTMuMjEsNS41N1Y3LjExaC0xOC4xMmwtMzcuMjcsNjQuNTVMMjMuMzksNy4xMUg1LjI2djk5LjM3aDE4LjEyVjM4LjQ5bDI4LjIyLDQ4Ljg4LDkuMDcsMTUuNyw5LjA3LTE1LjcsMjguMjItNDguOXY2OGgyNy45OGwxMS40Ny0xOS44OGg1MS42bDExLjQ3LDE5Ljg4aDE4LjEzbC03Ljg4LTEzLjY2Yy44NC44LDEuNjYsMS42MSwyLjU2LDIuMzUsOC42LDcuMDgsMTkuNTksMTEuMzEsMzEuNTcsMTEuMzEsMTMuMTgsMCwyNS4xMy01LjE2LDM0LjAyLTEzLjUzdjEzLjUzaDE4LjEydi0xOS44MWg2MS40M3YxOS44MWgxOC4xNVY3LjI4aC0xOC4xNVpNMTQ3Ljg2LDY4LjQ5bDE1LjM1LTI2LjU3LDE1LjM1LDI2LjU3aC0zMC43Wk0yNjUuODMsODAuNThjLTUuNTgsNC45NS0xMi45Myw3Ljk1LTIwLjk3LDcuOTUtMTYuNzYsMC0zMC40Ny0xMy4wMi0zMS41Ny0yOS40OS0uMDUtLjcxLS4wOC0xLjQ0LS4wOC0yLjE3cy4wMy0xLjQ1LjA4LTIuMTdjMS4xLTE2LjQ4LDE0LjgxLTI5LjQ5LDMxLjU3LTI5LjQ5LDguMDMsMCwxNS4zNSwyLjk5LDIwLjkzLDcuOTFsMTMuMDktNy41NnY2Mi41NGwtMTMuMDUtNy41NFoiLz48L2c+PC9zdmc+" alt="MACH Alliance"></a>
+  <span class="nav-brand-sep" aria-hidden="true"></span>
+  <button type="button" class="nav-logo" onclick="showLanding()">Product Catalog Generator</button>
   <select class="nav-site-select" id="currentSiteSelect" onchange="setCurrentSite(this.value)" title="Catalog you're currently working on — sets where new items are added and which categories export offers"></select>
   <div class="nav-tabs">
     <button class="tab-btn" id="tab-products"  onclick="setTab('products')">Products</button>
@@ -487,7 +532,8 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     <button class="tab-btn"        id="tab-snapshots" onclick="setTab('snapshots')">Snapshots</button>
   </div>
   <div class="nav-help-wrap">
-    <button class="tab-btn tab-help" id="howItWorksBtn" onclick="toggleHowItWorks(event)" title="How it works">?</button>
+    <button class="tab-btn tab-help" id="howItWorksBtn" onclick="toggleHowItWorks(event)"
+      title="How it works" aria-label="How it works"><span aria-hidden="true">?</span></button>
     <div class="how-it-works-panel" id="howItWorksPanel">
       <div class="hiw-title">How it works</div>
       <div class="hiw-step"><span class="info-step-num n1">1</span><div><strong>Add items</strong><br>Click + New Item, or pick an existing item from the grid</div></div>
@@ -496,7 +542,8 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       <div class="hiw-step"><span class="info-step-num n4">4</span><div><strong>Generate image</strong><br>Via OpenAI</div></div>
     </div>
   </div>
-  <button class="tab-btn tab-settings" id="tab-settings" onclick="setTab('settings')" title="Settings">⚙</button>
+  <button class="tab-btn tab-settings" id="tab-settings" onclick="setTab('settings')"
+    title="Settings" aria-label="Settings"><span aria-hidden="true">⚙</span></button>
 </nav>
 
 <div id="productsToolbar" class="products-toolbar">
@@ -504,7 +551,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   <button class="toolbar-btn" onclick="showCreator('batch')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>Batch Add</button>
 </div>
 
-<div id="landingView">
+<div id="landingView" role="region" aria-label="Home">
   <!-- Dev view (default) -->
   <div id="devView">
     <div class="wrap">
@@ -537,7 +584,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   <!-- Demo view -->
   <div id="demoView">
     <section class="hero" id="landingHero">
-      <div class="hero-nav"><span class="hero-logo">Product Catalog Generator</span></div>
+      <div class="hero-nav"><img class="hero-brand" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODcuMSAxNzYuMiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmZmZmY7fS5jbHMtMntmaWxsOiNmZmNiMWI7fTwvc3R5bGU+PC9kZWZzPjxnIGlkPSJMYXllcl8xLTIiPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMwLjk4LDE3MC4xMWgtMTQuOTFsLTIuNTYsNS4ySDUuMTlsMTQuMDYtMjcuMThoOC42NmwxNC4wNiwyNy4xOGgtOC40M2wtMi41Ni01LjJaTTI4LjIyLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODguMjUsMTY4Ljk0djYuMzdoLTI2LjIxdi0yNy4xOGg3LjkydjIwLjgxaDE4LjI5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEzNC45OCwxNjguOTR2Ni4zN2gtMjYuMjF2LTI3LjE4aDcuOTJ2MjAuODFoMTguMjlaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTU1LjUsMTc1LjMxdi0yNy4xOGg3LjkydjI3LjE4aC03LjkyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTIwOS4yNiwxNzAuMTFoLTE0LjkxbC0yLjU2LDUuMmgtOC4zMWwxNC4wNi0yNy4xOGg4LjY2bDE0LjA2LDI3LjE4aC04LjQzbC0yLjU2LTUuMlpNMjA2LjUxLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjcyLjQ3LDE0OC4xM3YyNy4xOGgtNi45NWwtMTcuNTUtMTcuODZ2MTcuODZoLTcuNjV2LTI3LjE4aDguMzlsMTYuMTEsMTYuNjJ2LTE2LjYyaDcuNjVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzE5LjkzLDE2NS42bDYuOCwzLjVjLTIuNTMsNC04LDcuMTEtMTUuMzQsNy4xMS0xMC4yNSwwLTE3LjE2LTUuMzItMTcuMTYtMTQuNDhzNi45MS0xNC40OCwxNy40Ny0xNC40OGM3LjAzLDAsMTIuNDcsMy4xOCwxNC45MSw3LjA3bC02LjgzLDMuNDljLTEuNzktMi43OS00LjU0LTQuMTEtOC4xOS00LjExLTUuNTksMC05LjMyLDIuODMtOS4zMiw4LjA0czMuNzMsOC4wNCw5LjMyLDguMDRjMy42NSwwLDYuNDUtMS4yNCw4LjM1LTQuMTZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzc2LjU4LDE2OS4yNXY2LjA2aC0yOXYtMjcuMThoMjguNTh2Ni4wNmgtMjAuNzd2NC40NmgxNy4xMnY1Ljc5aC0xNy4xMnY0LjgxaDIxLjJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzg3LjEsNy4yOGwtNS4yNi01LjI2aDBzMCwwLDAsMGgtMjguNjZ2NjEuMjdoLTQ1LjY1VjcuMjhsLTUuMjYtNS4yNmgtMjguNjR2Ny45NWMtNy41OS00LjY3LTE2LjI5LTcuNDQtMjUuNTgtOC4wMWgtNi43MWMtMTEuNTYuNzMtMjIuNDIsNS4wMy0zMS40LDEyLjQyLTkuNTUsNy44Ni0xNi4wNSwxOC41My0xOC43LDMwLjMzbC0yMi43OC0zOS40NS01LjI2LTUuMjYtMzYuNjMsNjMuNDNWNy4xMWwtNS4yNi01LjI2aC0yNi40MWwtMzMuMTMsNTcuMzdMMzEuNjksNy4xMWgwcy01LjI2LTUuMjYtNS4yNi01LjI2aDBzMCwwLDAsMEgwdjEwOS44OWw1LjI2LDUuMjZoMjguNjR2LTQ5Ljc3bDI2Ljc3LDQ2LjM2LDUuMjYsNS4yNywyNi43Ny00Ni4zN3YzOS4yNmw1LjI2LDUuMjZoMzYuMjdsMTEuNDgtMTkuODhoNDMuM2w4LjQ0LDE0LjYyLDUuMjYsNS4yNmgzMC4yOGwtMi0zLjQ3YzYuMDksMi4yNiwxMi41NywzLjQ3LDE5LjE0LDMuNDcsOC4yMiwwLDE2LjIyLTEuODksMjMuNTEtNS4zNHYuMDloMGw1LjI2LDUuMjZoMHMyOC42NCwwLDI4LjY0LDB2LTE5LjgxaDQ1LjY1djE0LjU1bDUuMjYsNS4yNmgyOC42NlY3LjI4aDBaTTE2NS4yNyw2My4yM2wyLjA5LTMuNjEsMi4wOSwzLjYxaC00LjE3Wk0yNzMuNjIsNzkuMDFsLTguNDUtNC44OC0yLjg0LDIuNTJjLTQuODIsNC4yNy0xMS4wMyw2LjYzLTE3LjQ4LDYuNjMtNi4wMywwLTExLjU3LTIuMTQtMTYuMDQtNS42LTIuODYtMy45LTQuNjgtOC42Mi01LjAyLTEzLjc2LS4wNC0uNTktLjA3LTEuMTgtLjA3LTEuNzdzLjAyLTEuMTkuMDctMS44MmMuOTItMTMuNzgsMTIuNDktMjQuNTgsMjYuMzItMjQuNTgsNi40MywwLDEyLjYzLDIuMzQsMTcuNDUsNi41OWwyLjg0LDIuNSwzLjIyLTEuODZ2MzYuMDNaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzU4LjQzLDcuMjh2NjEuMjdoLTYxLjQzVjcuMjhoLTE4LjEydjEzLjMzYy04LjE2LTcuNjgtMTguOTItMTIuNjUtMzAuODQtMTMuNGgtNi4zOGMtMTAuNzUuNjctMjAuNTUsNC43OC0yOC4zOCwxMS4yMi0xMS4wNiw5LjExLTE4LjEyLDIyLjkxLTE4LjEyLDM4LjM2LDAsMy44OS40NSw3LjY3LDEuMywxMS4zbC0yNC4xOS00MS44OS05LjA3LTE1LjctOS4wNywxNS43LTI0LjQyLDQyLjI4LTEwLjQ1LDE4LjExLTMuMjEsNS41N1Y3LjExaC0xOC4xMmwtMzcuMjcsNjQuNTVMMjMuMzksNy4xMUg1LjI2djk5LjM3aDE4LjEyVjM4LjQ5bDI4LjIyLDQ4Ljg4LDkuMDcsMTUuNyw5LjA3LTE1LjcsMjguMjItNDguOXY2OGgyNy45OGwxMS40Ny0xOS44OGg1MS42bDExLjQ3LDE5Ljg4aDE4LjEzbC03Ljg4LTEzLjY2Yy44NC44LDEuNjYsMS42MSwyLjU2LDIuMzUsOC42LDcuMDgsMTkuNTksMTEuMzEsMzEuNTcsMTEuMzEsMTMuMTgsMCwyNS4xMy01LjE2LDM0LjAyLTEzLjUzdjEzLjUzaDE4LjEydi0xOS44MWg2MS40M3YxOS44MWgxOC4xNVY3LjI4aC0xOC4xNVpNMTQ3Ljg2LDY4LjQ5bDE1LjM1LTI2LjU3LDE1LjM1LDI2LjU3aC0zMC43Wk0yNjUuODMsODAuNThjLTUuNTgsNC45NS0xMi45Myw3Ljk1LTIwLjk3LDcuOTUtMTYuNzYsMC0zMC40Ny0xMy4wMi0zMS41Ny0yOS40OS0uMDUtLjcxLS4wOC0xLjQ0LS4wOC0yLjE3cy4wMy0xLjQ1LjA4LTIuMTdjMS4xLTE2LjQ4LDE0LjgxLTI5LjQ5LDMxLjU3LTI5LjQ5LDguMDMsMCwxNS4zNSwyLjk5LDIwLjkzLDcuOTFsMTMuMDktNy41NnY2Mi41NGwtMTMuMDUtNy41NFoiLz48L2c+PC9zdmc+" alt="MACH Alliance"><span class="hero-brand-sep" aria-hidden="true"></span><span class="hero-logo">Product Catalog Generator</span></div>
       <div class="hero-body">
         <div class="hero-headline" id="landingHeroHeadline">Loading…</div>
         <div class="hero-sub" id="landingHeroSub"></div>
@@ -561,14 +608,14 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     <div id="siteGroups"></div>
   </aside>
 
-  <main class="grid-panel" id="gridPanel">
+  <main class="grid-panel" id="gridPanel" aria-label="Products">
     <div class="empty">Select a category</div>
   </main>
 
-  <aside class="detail" id="detailPanel"></aside>
+  <aside class="detail" id="detailPanel" aria-label="Product detail"></aside>
 </div>
 
-<div class="backups-view" id="backupsView">
+<div class="backups-view" id="backupsView" role="region" aria-label="Snapshots">
   <div class="backups-content">
     <div class="backups-header">
       <h2>Snapshots</h2>
@@ -582,9 +629,9 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   </div>
 </div>
 
-<div id="creatorPanel" class="creator-panel"></div>
+<div id="creatorPanel" class="creator-panel" role="region" aria-label="Add items"></div>
 
-<div class="backups-view" id="exportsView" style="display:none">
+<div class="backups-view" id="exportsView" role="region" aria-label="Exports" style="display:none">
   <div class="exports-layout">
 
     <!-- Left: map list -->
@@ -597,7 +644,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     </div>
 
     <!-- Middle: map editor -->
-    <div class="exports-editor" id="exportEditorArea">
+    <div class="exports-editor" id="exportEditorArea" role="region" aria-label="Export map editor">
       <div style="color:var(--muted);font-size:13px;padding-top:40px;text-align:center">
         Select an export map or create a new one
       </div>
@@ -611,7 +658,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   </div>
 </div>
 
-<div class="backups-view" id="settingsView">
+<div class="backups-view" id="settingsView" role="region" aria-label="Settings">
   <div class="backups-content">
     <div class="backups-header">
       <h2>Settings</h2>
@@ -627,11 +674,11 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
         </div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="form-row">
-            <label>Catalog path <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(JSON fixtures — read/write)</span></label>
+            <label for="sCatalogPath">Catalog path <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(JSON fixtures — read/write)</span></label>
             <input type="text" id="sCatalogPath" readonly style="font-family:monospace;font-size:11px;color:var(--muted);cursor:default">
           </div>
           <div class="form-row">
-            <label>Images path <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(product images — read/write)</span></label>
+            <label for="sImagesPath">Images path <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(product images — read/write)</span></label>
             <input type="text" id="sImagesPath" readonly style="font-family:monospace;font-size:11px;color:var(--muted);cursor:default">
           </div>
         </div>
@@ -646,7 +693,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
         <div id="sitesSettingsList" style="display:flex;flex-direction:column;gap:14px"></div>
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--hairline);display:flex;gap:8px;align-items:flex-end">
           <div class="form-row" style="flex:1">
-            <label>New catalog name</label>
+            <label for="sNewSiteName">New catalog name</label>
             <input type="text" id="sNewSiteName" placeholder="e.g. Electronics"
               onkeydown="if(event.key==='Enter'){event.preventDefault();addSite()}">
           </div>
@@ -655,25 +702,37 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       </div>
 
       <!-- Image URL -->
-      <!-- Model -->
+      <!-- Models & provider -->
       <div style="background:var(--white);border:1px solid var(--hairline);border-radius:6px;padding:20px">
-        <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px">Image generation model</div>
+        <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px">Models</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">
-          OpenAI model used for generating product images.
+          Which models to use, and how to reach them. Model IDs are <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">provider/name</code>
+          — on the direct route the prefix picks the vendor, on the others it's passed through as-is.
+          Endpoints and API keys are set in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code>, not here.
+        </div>
+        <div class="form-row">
+          <label for="sProvider">Access via</label>
+          <select id="sProvider" onchange="_renderRouteKeys()"></select>
+        </div>
+        <div class="form-row">
+          <label for="sTextModel">Text model</label>
+          <input type="text" id="sTextModel" placeholder="anthropic/claude-opus-5" spellcheck="false">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Batch item generation, export-map drafting, schema lookup.</div>
+        </div>
+        <div class="form-row">
+          <label for="sTextModelFast">Fast text model</label>
+          <input type="text" id="sTextModelFast" placeholder="anthropic/claude-haiku-4-5" spellcheck="false">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Short, high-volume calls — image prompts and one-line descriptions.</div>
         </div>
         <div style="display:flex;gap:8px;align-items:flex-end">
           <div class="form-row" style="flex:1">
-            <label>Model</label>
-            <select id="sModel">
-              <option value="gpt-image-1">gpt-image-1</option>
-              <option value="gpt-image-2">gpt-image-2</option>
-              <option value="dall-e-3">dall-e-3</option>
-              <option value="dall-e-2">dall-e-2</option>
-            </select>
+            <label for="sImageModel">Image model</label>
+            <input type="text" id="sImageModel" placeholder="openai/gpt-image-1" spellcheck="false">
           </div>
-          <button class="btn btn-solid" onclick="saveModel()" style="flex-shrink:0;margin-bottom:0">Save</button>
+          <button class="btn btn-solid" id="sSaveModels" onclick="saveModels()" style="flex-shrink:0;margin-bottom:0">Save</button>
         </div>
-        <div id="sModelMsg" style="font-size:11px;color:var(--green);margin-top:6px;display:none">Saved</div>
+        <div id="sModelMsg" role="status" style="font-size:11px;color:var(--green);margin-top:6px;display:none"></div>
+        <div id="sModelErr" role="alert" style="font-size:11px;color:var(--red);margin-top:6px;display:none"></div>
       </div>
 
       <!-- Landing page mode -->
@@ -687,7 +746,8 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
             <div style="font-size:13px;font-weight:500" id="sLandingModeLabel">Live</div>
             <div style="font-size:11px;color:var(--muted)">Live shows the data/dev view · Demo shows the photo showcase view</div>
           </div>
-          <button class="switch" id="sLandingModeSwitch" role="switch" aria-checked="false" onclick="saveLandingMode()">
+          <button class="switch" id="sLandingModeSwitch" role="switch" aria-checked="false"
+            aria-label="Landing page demo mode" onclick="saveLandingMode()">
             <span class="switch-thumb"></span>
           </button>
         </div>
@@ -696,16 +756,9 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       <!-- API keys status -->
       <div style="background:var(--white);border:1px solid var(--hairline);border-radius:6px;padding:20px">
         <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:12px">API keys</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px">Anthropic (Claude)</span>
-            <span id="sAnthropicKey" style="font-size:11px;font-weight:600"></span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px">OpenAI (image generation)</span>
-            <span id="sOpenaiKey" style="font-size:11px;font-weight:600"></span>
-          </div>
-        </div>
+        <!-- Only the keys the selected route actually uses — an "OpenAI key missing"
+             warning is noise when everything is going through OpenRouter. -->
+        <div id="sRouteKeys" style="display:flex;flex-direction:column;gap:8px"></div>
         <div style="font-size:11px;color:var(--muted);margin-top:12px">Set in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code> — requires container restart to take effect.</div>
       </div>
 
@@ -828,10 +881,11 @@ function catBtn(g) {
 
 function selectCategoryByName(site, cat) {
   const g = allData.find(d => d.skin === site && d.category === cat) || { skin: site, category: cat, items: [] }
-  selectCategory(g)
+  // Always a user action — a landing card or a sidebar category — so focus follows.
+  selectCategory(g, { focus: true })
 }
 
-function selectCategory(g) {
+function selectCategory(g, { focus = false } = {}) {
   // Navigating into a category from a different catalog (e.g. a landing-page card)
   // makes that catalog the current one too, so the sidebar and this selection agree.
   if (g.skin !== currentSiteId) {
@@ -852,6 +906,7 @@ function selectCategory(g) {
   if (btn) btn.classList.add('active')
   closeDetail()
   renderGrid()
+  if (focus) _focusView('gridPanel')
 }
 
 // ── LANDING (home screen) ────────────────────────────────────────
@@ -869,6 +924,7 @@ function showLanding() {
   document.getElementById('creatorPanel').classList.remove('open')
   document.getElementById('landingView').style.display = 'block'
   renderLanding()
+  _focusView('landingView')
 }
 
 function _landingCodeLine(key, val, isLast) {
@@ -919,13 +975,19 @@ function renderLanding() {
     const cats = allData.filter(g => g.skin === site.id)
     const total = cats.reduce((n, g) => n + g.items.length, 0)
     const firstCat = site.categories[0]
-    const onclick = firstCat ? ` onclick='selectCategoryByName("${site.id}","${firstCat}")'` : ''
-    return `
-      <a class="site-card"${onclick} style="${firstCat ? '' : 'cursor:default'}">
+    const meta = !site.categories.length ? 'No categories yet — add one in Settings'
+      : total ? `${total} products · ${site.categories.length} categories`
+      : `No products yet · ${site.categories.length} categories`
+    const body = `
         <div class="site-card-id">${escHtml(site.id)}</div>
         <div class="site-card-label">${escHtml(site.label)}</div>
-        <div class="site-card-meta">${total ? `${total} products · ${cats.length} categories` : 'No categories yet — add one in Settings'}</div>
-      </a>`
+        <div class="site-card-meta">${meta}</div>`
+    // The name has to say what activating the card does — "Home" alone, read out of
+    // context in a list of cards, doesn't.
+    return firstCat
+      ? `<button type="button" class="site-card" aria-label="Open catalog ${escHtml(site.label)} — ${escHtml(meta)}"
+                 onclick='selectCategoryByName("${site.id}","${firstCat}")'>${body}</button>`
+      : `<div class="site-card" style="cursor:default">${body}</div>`
   }).join('')
   document.getElementById('landingSitesSection').style.display = ''
   document.getElementById('landingActionsRow').style.display = ''
@@ -1009,9 +1071,9 @@ function itemCard(item) {
   return `<div class="item-card${item.hasImage ? '' : ' no-image'}${checked ? ' checked' : ''}" id="card-${item.objectID}" onclick='selectItem("${item.objectID}")'>
     <input type="checkbox" class="item-cb" ${checked ? 'checked' : ''}
       onclick="event.stopPropagation();toggleSelect('${item.objectID}',this)"
-      title="Select for deletion">
+      aria-label="Select ${escHtml(item.name)} for deletion">
     <div class="item-thumb">
-      ${imgSrc ? `<img src="${imgSrc}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+      ${imgSrc ? `<img src="${imgSrc}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
       <div class="placeholder" ${imgSrc ? 'style="display:none"' : ''}>
         <span class="ph-icon">📷</span>
         <span class="ph-label">No image</span>
@@ -1019,7 +1081,7 @@ function itemCard(item) {
       <div class="spinner" id="spin-${item.objectID}"><div class="spin"></div></div>
     </div>
     <div class="item-info">
-      <div class="item-name">${escHtml(item.name)}</div>
+      <button type="button" class="item-name" onclick='event.stopPropagation();selectItem("${item.objectID}")'>${escHtml(item.name)}</button>
       <div class="item-id">${escHtml(item.objectID)}</div>
       <div class="item-badges">
         ${item.hasImage && item.isAIGenerated ? '<span class="badge badge-done">✓ generated</span>' : item.hasImage ? '<span class="badge badge-original">⬡ original</span>' : '<span class="badge badge-missing">⚠ no image</span>'}
@@ -1038,6 +1100,9 @@ function selectItem(objectID) {
   const card = document.getElementById(`card-${objectID}`)
   if (card) card.classList.add('selected')
   renderDetail()
+  // The detail panel is what just appeared; leaving focus on the card in the grid means a
+  // screen-reader user is told nothing opened, and Tab continues past it.
+  _focusView('detailPanel')
 }
 
 function selectAll() {
@@ -1133,40 +1198,41 @@ function renderDetail() {
   panel.innerHTML = `
     ${stepIndicatorsHTML(item)}
     <div class="detail-img-wrap" id="detailImgWrap">
-      ${imgSrc ? `<img id="detailImg" src="${imgSrc}">` : ''}
+      ${imgSrc ? `<button type="button" class="detail-img-btn" aria-label="View ${escHtml(item.name)} full size"
+        onclick="openLightbox(document.getElementById('detailImg').src)"><img id="detailImg" src="${imgSrc}" alt=""></button>` : ''}
       <div class="placeholder" id="detailPlaceholder" ${imgSrc ? 'style="display:none"' : ''}>☐</div>
       <div class="spinner" id="detailSpin"><div class="spin"></div></div>
     </div>
-    <div class="tweak-compare" id="tweakCompare" style="display:none"></div>
+    <div class="tweak-compare" id="tweakCompare" role="region" aria-label="Compare tweaked image" style="display:none"></div>
     <div class="detail-body">
       <div class="prompt-section">
         <div class="prompt-label">
           <span>Item Details</span>
-          <span class="save-msg" id="metaSaveMsg">Saved</span>
+          <span class="save-msg" id="metaSaveMsg" role="status"></span>
         </div>
         <div style="font-family:monospace;font-size:11px;color:var(--muted);margin-top:-4px">${escHtml(item.objectID)}</div>
         <div class="form-row">
-          <label>Name</label>
+          <label for="nameInput">Name</label>
           <input type="text" id="nameInput" value="${escHtml(item.name)}"
             style="font-family:var(--font-display);font-size:18px;font-weight:600"
             placeholder="Product name"
             onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
         </div>
         <div class="form-row">
-          <label>Brand</label>
+          <label for="brandInput">Brand</label>
           <input type="text" id="brandInput" value="${escHtml(item.brand || '')}"
             placeholder="e.g. Arket, Muji"
             onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
         </div>
         <div style="display:flex;gap:8px">
           <div class="form-row" style="flex:1">
-            <label>Colour</label>
+            <label for="colourInput">Colour</label>
             <input type="text" id="colourInput" value="${escHtml(item.colourFamily || '')}"
               placeholder="e.g. navy, olive, camel"
               onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
           </div>
           <div class="form-row" style="width:100px;flex-shrink:0">
-            <label>Fit</label>
+            <label for="fitInput">Fit</label>
             <select id="fitInput">
               <option value="unisex" ${item.fit==='unisex'?'selected':''}>Unisex</option>
               <option value="mens"   ${item.fit==='mens'  ?'selected':''}>Men's</option>
@@ -1176,13 +1242,13 @@ function renderDetail() {
         </div>
         <div style="display:flex;gap:8px">
           <div class="form-row" style="flex:1">
-            <label>Price</label>
+            <label for="priceInput">Price</label>
             <input type="number" id="priceInput" value="${escHtml(String(item.price ?? ''))}"
               placeholder="0.00" step="0.01" min="0"
               onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
           </div>
           <div class="form-row" style="width:72px;flex-shrink:0">
-            <label>Currency</label>
+            <label for="currencyInput">Currency</label>
             <input type="text" id="currencyInput" value="${escHtml(item.currency || 'USD')}"
               placeholder="USD" maxlength="5"
               onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
@@ -1195,7 +1261,7 @@ function renderDetail() {
       <div class="prompt-section">
         <div class="prompt-label">
           <span>Tags</span>
-          <span class="save-msg" id="tagsSaveMsg">Saved</span>
+          <span class="save-msg" id="tagsSaveMsg" role="status"></span>
         </div>
         <input type="text" id="tagsInput" value="${escHtml((item.tags||[]).join(', '))}"
           style="font-family:var(--font);font-size:12px;color:var(--ink);border:1px solid var(--hairline);border-radius:var(--radius);padding:7px 10px;outline:none;background:var(--stone);transition:border-color 0.15s;width:100%"
@@ -1210,8 +1276,8 @@ function renderDetail() {
 
       <div class="prompt-section">
         <div class="prompt-label">
-          <span>Description</span>
-          <span class="save-msg" id="descSaveMsg">Saved</span>
+          <label for="descTA">Description</label>
+          <span class="save-msg" id="descSaveMsg" role="status"></span>
         </div>
         <textarea id="descTA" rows="3">${escHtml(item.description || '')}</textarea>
         <div class="prompt-actions">
@@ -1222,8 +1288,8 @@ function renderDetail() {
 
       <div class="prompt-section">
         <div class="prompt-label">
-          <span>Image Query</span>
-          <span class="save-msg" id="itemSaveMsg">Saved</span>
+          <label for="itemPromptTA">Image Query</label>
+          <span class="save-msg" id="itemSaveMsg" role="status"></span>
         </div>
         <textarea id="itemPromptTA" rows="2">${escHtml(itemPrompt)}</textarea>
         <div class="prompt-actions">
@@ -1238,7 +1304,7 @@ function renderDetail() {
           <button class="btn btn-solid" id="genBtn" onclick="generateCurrent()">
             ${item.hasImage && !item.isExternalImage ? '↺ Regenerate' : '▶ Generate Image'}
           </button>
-          <span style="font-size:10px;color:var(--muted);margin-left:2px">via <code style="font-size:10px;background:var(--stone);padding:1px 5px;border-radius:3px">${escHtml(config.model || 'gpt-image-1')}</code></span>
+          <span style="font-size:10px;color:var(--muted);margin-left:2px">via <code style="font-size:10px;background:var(--stone);padding:1px 5px;border-radius:3px">${escHtml(config.imageModel || 'openai/gpt-image-1')}</code></span>
         </div>
         ${item.hasImage && !item.isExternalImage ? `
         <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
@@ -1448,11 +1514,11 @@ function showTweakCompare(objectID, originalUrl, tweakUrl) {
     <div class="tweak-compare-row">
       <div class="tweak-compare-col">
         <div class="tweak-compare-label">Original</div>
-        <img src="${originalUrl}">
+        <img src="${originalUrl}" alt="">
       </div>
       <div class="tweak-compare-col">
         <div class="tweak-compare-label">Tweaked</div>
-        <img src="${tweakUrl}">
+        <img src="${tweakUrl}" alt="">
       </div>
     </div>
     <div class="tweak-compare-actions">
@@ -1461,6 +1527,7 @@ function showTweakCompare(objectID, originalUrl, tweakUrl) {
     </div>
   `
   el.style.display = ''
+  _focusView('tweakCompare')
 }
 
 async function resolveTweak(objectID, accept) {
@@ -1568,11 +1635,13 @@ function showGenError(msg) {
   el.classList.toggle('show', !!msg)
 }
 
-function flashMsg(id) {
+function flashMsg(id, text = 'Saved') {
   const el = document.getElementById(id)
   if (!el) return
+  // Set the text rather than just revealing it — see the 4.1.3 note in CLAUDE.md.
+  el.textContent = text
   el.classList.add('show')
-  setTimeout(() => el.classList.remove('show'), 2000)
+  setTimeout(() => { el.classList.remove('show'); el.textContent = '' }, 2000)
 }
 
 // Escapes the apostrophe too — several handlers below sit in single-quoted attributes
@@ -1607,14 +1676,41 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeLightbox()
 })
+// The lightbox is the app's only true modal — a fixed overlay covering everything. That
+// carries three obligations a plain div doesn't meet on its own: focus has to move into it
+// (or the keyboard user is left behind it), Tab must not escape while it's covering the
+// page, and focus has to come back to whatever opened it. Escape already closed it via the
+// global keydown handler; that still works and now also restores focus.
+let _lightboxReturnFocus = null
+
 function openLightbox(src) {
   if (!src) return
+  _lightboxReturnFocus = document.activeElement
   document.getElementById('lightboxImg').src = src
-  document.getElementById('lightbox').classList.add('open')
+  const box = document.getElementById('lightbox')
+  box.classList.add('open')
+  box.querySelector('.lightbox-close')?.focus()
 }
+
 function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open')
+  const box = document.getElementById('lightbox')
+  if (!box.classList.contains('open')) return
+  box.classList.remove('open')
+  // Back to the control that opened it, so the keyboard user resumes where they left off
+  // rather than at the top of the document.
+  _lightboxReturnFocus?.focus?.()
+  _lightboxReturnFocus = null
 }
+
+// Only the close button is focusable inside, so containment is just "keep Tab on it"
+// rather than a general trap over a list of tabbables.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return
+  const box = document.getElementById('lightbox')
+  if (!box.classList.contains('open')) return
+  e.preventDefault()
+  box.querySelector('.lightbox-close')?.focus()
+})
 
 // Shared fetch wrapper: makes the request, parses JSON, and throws on a non-2xx
 // response or an {error} payload — callers just try/catch instead of hand-checking
@@ -1633,6 +1729,11 @@ function toast(message, type = 'error') {
   if (!stack) return
   const el = document.createElement('div')
   el.className = `toast${type === 'success' ? ' toast-success' : ''}`
+  // Toasts are how every error in this app reaches the user, and a plain div appended to
+  // the DOM is silent to a screen reader. The role goes on the toast itself rather than the
+  // stack so errors interrupt and confirmations wait their turn — a live region on the
+  // container would flatten both to the same priority.
+  el.setAttribute('role', type === 'success' ? 'status' : 'alert')
   el.textContent = message
   const dismiss = () => { el.classList.add('toast-out'); setTimeout(() => el.remove(), 150) }
   el.onclick = dismiss
@@ -1645,12 +1746,18 @@ function toast(message, type = 'error') {
 function showCreator(mode) {
   pendingItems = []
   _pendingCtr  = 0
-  // hide all standard panels — creator sits above them
+  // hide all standard panels — creator sits above them. landingView has to go too: opening
+  // the creator from the landing screen used to leave it visible behind, so Tab walked the
+  // background cards before ever reaching the form.
   document.getElementById('mainLayout').style.display    = 'none'
   document.getElementById('productsToolbar').style.display = 'none'
+  document.getElementById('landingView').style.display   = 'none'
   closeHowItWorks()
   document.getElementById('creatorPanel').classList.add('open')
   _renderCreator(mode)
+  // Same reason as the tab views: swapping what fills the screen without moving focus
+  // leaves a screen-reader user on a control that is no longer there.
+  _focusView('creatorPanel')
 }
 
 function hideCreator() {
@@ -1693,17 +1800,17 @@ function _renderCreator(mode) {
 
 function _batchInputHtml() {
   return `<div class="creator-input-area">
-    <h3>Describe what to create</h3>
-    <textarea id="creatorPrompt" rows="3" placeholder="e.g. 5 skinny chino pants from Gap in navy, olive, stone, camel, and slate — men's, $85"></textarea>
+    <h3 id="creatorPromptLabel">Describe what to create</h3>
+    <textarea id="creatorPrompt" rows="3" aria-labelledby="creatorPromptLabel" placeholder="e.g. 5 skinny chino pants from Gap in navy, olive, stone, camel, and slate — men's, $85"></textarea>
     <div style="margin-top:8px">
       <div class="form-row">
-        <label>Style hint <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — AI infers styles from description, this guides it)</span></label>
+        <label for="creatorStyleHint">Style hint <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — AI infers styles from description, this guides it)</span></label>
         <input type="text" id="creatorStyleHint" placeholder="e.g. smart-casual — AI will also add parallel styles">
       </div>
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div class="form-row" style="flex-direction:row;align-items:center;gap:6px">
-        <label style="white-space:nowrap;margin:0">Price (USD)</label>
+        <label for="creatorPrice" style="white-space:nowrap;margin:0">Price (USD)</label>
         <input type="text" id="creatorPrice" placeholder="85 or 85–125"
           style="font-family:var(--font);font-size:12px;color:var(--ink);border:1px solid var(--hairline);border-radius:var(--radius);padding:5px 8px;outline:none;background:var(--stone);width:110px">
       </div>
@@ -1722,20 +1829,20 @@ function _singleInputHtml() {
   return `<div class="creator-input-area">
     <h3>New item</h3>
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:10px">
-      <div class="form-row"><label>Category <span style="color:var(--red)">*</span></label><select id="siCat">${catOpts}</select></div>
-      <div class="form-row"><label>Name <span style="color:var(--red)">*</span></label><input type="text" id="siName" placeholder="e.g. Slim Chino — Navy" autofocus></div>
+      <div class="form-row"><label for="siCat">Category <span style="color:var(--red)">*</span></label><select id="siCat">${catOpts}</select></div>
+      <div class="form-row"><label for="siName">Name <span style="color:var(--red)">*</span></label><input type="text" id="siName" placeholder="e.g. Slim Chino — Navy" autofocus></div>
     </div>
     <div style="margin-bottom:10px">
-      <div class="form-row"><label>Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(comma-separated)</span></label>
+      <div class="form-row"><label for="siTags">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(comma-separated)</span></label>
         <input type="text" id="siTags" placeholder="e.g. slim, chino, cotton, smart-casual"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="form-row"><label>Brand</label><input type="text" id="siBrand" placeholder="e.g. Arket"></div>
-      <div class="form-row"><label>Price (USD)</label><input type="number" id="siPrice" placeholder="120" step="0.01" min="0"></div>
-      <div class="form-row"><label>Fit</label><select id="siFit"><option value="unisex">Unisex</option><option value="mens">Men's</option><option value="womens">Women's</option></select></div>
+      <div class="form-row"><label for="siBrand">Brand</label><input type="text" id="siBrand" placeholder="e.g. Arket"></div>
+      <div class="form-row"><label for="siPrice">Price (USD)</label><input type="number" id="siPrice" placeholder="120" step="0.01" min="0"></div>
+      <div class="form-row"><label for="siFit">Fit</label><select id="siFit"><option value="unisex">Unisex</option><option value="mens">Men's</option><option value="womens">Women's</option></select></div>
     </div>
     <div style="margin-bottom:14px">
-      <div class="form-row"><label>Colour</label><input type="text" id="siColourFamily" placeholder="e.g. navy, stone, olive, camel"></div>
+      <div class="form-row"><label for="siColourFamily">Colour</label><input type="text" id="siColourFamily" placeholder="e.g. navy, stone, olive, camel"></div>
     </div>
     <div id="siError" style="display:none;font-size:11px;color:var(--red);background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:7px 10px;margin-bottom:10px"></div>
     <button class="btn btn-solid" id="siCreateBtn" onclick="createSingleItem()">Create Item →</button>
@@ -1793,10 +1900,13 @@ function _refreshCard(id) {
 }
 
 function _statusChip(status, errMsg) {
-  if (!status || status === 'pending') return '<span class="chip chip-pending">···</span>'
-  if (status === 'running') return '<span class="chip chip-running">…</span>'
-  if (status === 'done')    return '<span class="chip chip-ok">✓</span>'
-  if (status === 'error')   return `<span class="chip chip-error" title="${escHtml(errMsg || 'Failed')} — click ✨ to retry">!</span>`
+  const chip = (cls, glyph, label, title = '') =>
+    `<span class="chip ${cls}"${title}><span aria-hidden="true">${glyph}</span><span class="sr-only">${label}</span></span>`
+  if (!status || status === 'pending') return chip('chip-pending', '···', 'not started')
+  if (status === 'running') return chip('chip-running', '…', 'generating')
+  if (status === 'done')    return chip('chip-ok', '✓', 'done')
+  if (status === 'error')   return chip('chip-error', '!',
+    `failed: ${escHtml(errMsg || 'Failed')}`, ` title="${escHtml(errMsg || 'Failed')} — click the generate button to retry"`)
   return ''
 }
 
@@ -1824,19 +1934,19 @@ function _creatorCardHtml(item) {
     <div class="creator-card-body">
 
       <div class="cf">
-        <label>Name</label>
+        <label for="${id}-name">Name</label>
         <input id="${id}-name" value="${escHtml(item.name)}" placeholder="Product name"
           oninput="pendingItems.find(p=>p._id==='${id}').name=this.value">
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div class="cf">
-          <label>Brand</label>
+          <label for="${id}-brand">Brand</label>
           <input id="${id}-brand" value="${escHtml(item.brand||'')}" placeholder="Brand"
             oninput="pendingItems.find(p=>p._id==='${id}').brand=this.value">
         </div>
         <div class="cf">
-          <label>Category</label>
+          <label for="${id}-cat">Category</label>
           <select id="${id}-cat" onchange="pendingItems.find(p=>p._id==='${id}').category=this.value">
             ${catOpts}
           </select>
@@ -1845,12 +1955,12 @@ function _creatorCardHtml(item) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div class="cf">
-          <label>Price (USD)</label>
+          <label for="${id}-price">Price (USD)</label>
           <input id="${id}-price" type="number" value="${item.price||''}" placeholder="0.00" step="0.01" min="0"
             oninput="pendingItems.find(p=>p._id==='${id}').price=parseFloat(this.value)||0">
         </div>
         <div class="cf">
-          <label>Fit</label>
+          <label for="${id}-fit">Fit</label>
           <select id="${id}-fit" onchange="_onFitChange('${id}',this.value)">
             <option value="unisex" ${item.fit==='unisex'?'selected':''}>Unisex</option>
             <option value="mens"   ${item.fit==='mens'  ?'selected':''}>Men's</option>
@@ -1860,19 +1970,19 @@ function _creatorCardHtml(item) {
       </div>
 
       <div class="cf">
-        <label>Tags</label>
+        <label for="${id}-tags">Tags</label>
         <input id="${id}-tags" value="${escHtml((item.tags||[]).join(', '))}" placeholder="slim, chino, cotton"
           oninput="pendingItems.find(p=>p._id==='${id}').tags=this.value.split(',').map(t=>t.trim()).filter(Boolean)">
       </div>
 
       <div class="cf">
-        <label>Colour</label>
+        <label for="${id}-colour">Colour</label>
         <input id="${id}-colour" value="${escHtml(item.colourFamily||'')}" placeholder="e.g. navy, olive, camel"
           oninput="pendingItems.find(p=>p._id==='${id}').colourFamily=this.value">
       </div>
 
       <div class="cf">
-        <label>Description ${_statusChip(item._descStatus, item._descError)}</label>
+        <label for="${id}-desc">Description ${_statusChip(item._descStatus, item._descError)}</label>
         <div class="frow">
           <textarea id="${id}-desc" rows="2" placeholder="${item._descStatus==='running'?'Generating…':'Add or generate a description'}"
             oninput="pendingItems.find(p=>p._id==='${id}').description=this.value"
@@ -1883,7 +1993,7 @@ function _creatorCardHtml(item) {
       </div>
 
       <div class="cf">
-        <label>Image Query ${_statusChip(item._queryStatus, item._queryError)}</label>
+        <label for="${id}-query">Image Query ${_statusChip(item._queryStatus, item._queryError)}</label>
         <div class="frow">
           <textarea id="${id}-query" rows="2" placeholder="${item._queryStatus==='running'?'Generating…':'Add or generate an image query'}"
             oninput="pendingItems.find(p=>p._id==='${id}').imagePrompt=this.value"
@@ -2140,8 +2250,10 @@ function backupRow(b) {
       <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtSize(b.size)} &nbsp;·&nbsp; ${escHtml(b.filename)}</div>
     </div>
     <div style="display:flex;gap:6px">
-      <button class="btn btn-ghost" onclick="restoreBackup('${escHtml(b.filename)}')">↺ Restore</button>
-      <button class="btn btn-danger" onclick="deleteBackup('${escHtml(b.filename)}')">Delete</button>
+      <button class="btn btn-ghost" onclick="restoreBackup('${escHtml(b.filename)}')"
+        aria-label="Restore snapshot from ${escHtml(fmtDate(b.created))}"><span aria-hidden="true">↺</span> Restore</button>
+      <button class="btn btn-danger" onclick="deleteBackup('${escHtml(b.filename)}')"
+        aria-label="Delete snapshot from ${escHtml(fmtDate(b.created))}">Delete</button>
     </div>
   </div>`
 }
@@ -2152,6 +2264,9 @@ async function createSnapshot() {
   try {
     await apiCall('/api/backups', { method: 'POST' })
     await loadBackups()
+    // Success was silent: the button label flicked back and a row appeared in a list the
+    // user may not be looking at. Nothing announced that the snapshot actually happened.
+    toast('Snapshot created', 'success')
   } catch (err) {
     toast('Error creating snapshot: ' + err.message)
   } finally {
@@ -2252,6 +2367,29 @@ async function setTab(tab) {
   if (tab === 'exports')   await _loadExportsTab()
   if (tab === 'snapshots') loadBackups()
   if (tab === 'settings')  _loadSettingsTab()
+
+  _focusView({ products: 'gridPanel', exports: 'exportsView', snapshots: 'backupsView', settings: 'settingsView' }[tab])
+}
+
+// Sends focus into a view that has just been revealed. The container is only focusable
+// programmatically (tabindex="-1"), so this adds nothing to the tab order — it just moves
+// the insertion point, which is what makes a screen reader announce the new region and
+// what stops the next Tab from continuing along the nav bar instead of into the content.
+// The skip link can't point at one fixed id: which region is "main" depends on the tab,
+// and the others are display:none, so a plain #hash would land on a hidden element.
+function _focusActiveMain() {
+  const candidates = ['landingView', 'gridPanel', 'exportsView', 'backupsView', 'settingsView']
+  const visible = candidates
+    .map(id => document.getElementById(id))
+    .find(el => el && el.offsetParent !== null)
+  if (visible) _focusView(visible.id)
+}
+
+function _focusView(id) {
+  const el = id && document.getElementById(id)
+  if (!el) return
+  el.setAttribute('tabindex', '-1')
+  el.focus({ preventScroll: true })
 }
 
 async function _loadExportsTab() {
@@ -2318,6 +2456,7 @@ async function selectMap(id) {
   if (!currentMap) { renderSchemaPanel(); return }
   renderMapEditor(currentMap)
   await resolveMapSchema(id)
+  _focusView('exportEditorArea')
 }
 
 // Builds the "site-url"/"image-url" transform's preview value, mirroring resolveFileUrl()
@@ -2350,20 +2489,20 @@ function previewTransform(source, transform) {
   if (transform === 'site-url' || transform === 'image-url') {
     const base = transform === 'site-url' ? currentMap?.siteBaseUrl : currentMap?.imageExportBase
     const val = _resolveFileUrlPreview(base)
-    if (val === null) return '<span style="color:#ccc">—</span>'
+    if (val === null) return '<span style="color:var(--muted)">—</span>'
     const truncated = val.length > 52 ? val.slice(0, 52) + '…' : val
     return `<span title="${escHtml(val)}">${escHtml(truncated)}</span>`
   }
   const literalSrc = _literalSourceValue(source)
   const raw = literalSrc !== undefined ? literalSrc : source.split('.').reduce((o, k) => o?.[k], exportSample)
-  if (raw === undefined || raw === null) return '<span style="color:#ccc">—</span>'
+  if (raw === undefined || raw === null) return '<span style="color:var(--muted)">—</span>'
   let val
   switch (transform) {
     case 'first':     val = Array.isArray(raw) ? raw[0] : raw; break
     case 'join':      val = Array.isArray(raw) ? raw.join(', ') : raw; break
     default:          val = raw
   }
-  if (val === null || val === undefined) return '<span style="color:#ccc">—</span>'
+  if (val === null || val === undefined) return '<span style="color:var(--muted)">—</span>'
   const str = typeof val === 'object' ? JSON.stringify(val) : String(val ?? '')
   const truncated = str.length > 52 ? str.slice(0, 52) + '…' : str
   return `<span title="${escHtml(str)}">${escHtml(truncated)}</span>`
@@ -2406,19 +2545,19 @@ function renderMapEditor(map) {
   const activeCount = map.fields.filter(f => f.include).length
   const sampleOpts = exportItems.map(it => `<option value="${escHtml(it.objectID)}" ${it.objectID === exportSample?.objectID ? 'selected' : ''}>${escHtml(it.objectID)}${it.name ? ' — ' + escHtml(it.name) : ''}</option>`).join('')
   const sampleLabel = exportItems.length ? `<span style="font-size:10px;color:var(--muted);font-weight:400;font-style:italic"> — previewing:
-    <select onchange="changePreviewSample(this.value)" style="font-size:10px;color:var(--muted);font-weight:400;font-style:italic;border:none;background:none;font-family:var(--font);outline:none;cursor:pointer;max-width:260px">${sampleOpts}</select></span>` : ''
+    <select onchange="changePreviewSample(this.value)" aria-label="Preview sample product" style="font-size:10px;color:var(--muted);font-weight:400;font-style:italic;border:none;background:none;font-family:var(--font);outline:none;cursor:pointer;max-width:260px">${sampleOpts}</select></span>` : ''
   area.innerHTML = `
     <div style="max-width:960px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:16px">
         <div>
-          <input id="emName" value="${escHtml(map.name)}" style="font-size:18px;font-weight:600;letter-spacing:-0.02em;border:none;background:none;font-family:var(--font);color:var(--ink);outline:none;width:340px;padding:0" placeholder="Map name">
-          <input id="emDesc" value="${escHtml(map.description)}" style="display:block;margin-top:4px;font-size:12px;border:none;background:none;font-family:var(--font);color:var(--muted);outline:none;width:520px;padding:0" placeholder="e.g. Algolia product search with BigCommerce v2 integration">
+          <input id="emName" aria-label="Map name" value="${escHtml(map.name)}" style="font-size:18px;font-weight:600;letter-spacing:-0.02em;border:none;background:none;font-family:var(--font);color:var(--ink);outline:none;width:340px;padding:0" placeholder="Map name">
+          <input id="emDesc" aria-label="Map description" value="${escHtml(map.description)}" style="display:block;margin-top:4px;font-size:12px;border:none;background:none;font-family:var(--font);color:var(--muted);outline:none;width:520px;padding:0" placeholder="e.g. Algolia product search with BigCommerce v2 integration">
           <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
-            <label style="font-size:10px;color:var(--muted);white-space:nowrap">Site base URL</label>
+            <label for="emSiteBaseUrl" style="font-size:10px;color:var(--muted);white-space:nowrap">Site base URL</label>
             <input id="emSiteBaseUrl" value="${escHtml(map.siteBaseUrl || '')}" placeholder="https://mystorefront.example.com — this map's destination, for the site-url transform" onchange="updateSiteBaseUrl()" style="font-size:11px;font-family:monospace;border:none;border-bottom:1px solid var(--hairline);background:none;color:var(--ink);outline:none;width:420px;padding:0 0 1px">
           </div>
           <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
-            <label style="font-size:10px;color:var(--muted);white-space:nowrap">Image export base</label>
+            <label for="emImageExportBase" style="font-size:10px;color:var(--muted);white-space:nowrap">Image export base</label>
             <input id="emImageExportBase" value="${escHtml(map.imageExportBase || '')}" placeholder="e.g. images/ or https://cdn.example.com — also sets the zip download's folder layout" onchange="updateImageExportBase()" style="font-size:11px;font-family:monospace;border:none;border-bottom:1px solid var(--hairline);background:none;color:var(--ink);outline:none;width:420px;padding:0 0 1px">
           </div>
         </div>
@@ -2428,21 +2567,23 @@ function renderMapEditor(map) {
           <button class="btn btn-solid" onclick="runExport('${escAttrJs(map.id)}')">⬇ Download</button>
         </div>
       </div>
-      <div id="emSaveMsg" style="font-size:11px;color:var(--green);margin-bottom:8px;display:none">Saved</div>
+      <div id="emSaveMsg" role="status" style="font-size:11px;color:var(--green);margin-bottom:8px;display:none"></div>
 
       <!-- Which categories to export — ad-hoc, scoped to the catalog picked in the nav
            switcher; not saved on the map, so one map stays reusable across catalogs. -->
       <div style="margin-bottom:14px;padding:10px 12px;background:var(--stone);border:1px solid var(--hairline);border-radius:6px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">
-            Export categories <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa">— from "${escHtml(sites.find(s=>s.id===currentSiteId)?.label || '')}"</span>
-          </label>
+          <div id="exportCatFilterLabel" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">
+            Export categories <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— from "${escHtml(sites.find(s=>s.id===currentSiteId)?.label || '')}"</span>
+          </div>
           <span style="font-size:10.5px">
-            <a href="#" onclick="event.preventDefault();_setExportCatFilter(true)" style="color:var(--muted)">All</a> ·
-            <a href="#" onclick="event.preventDefault();_setExportCatFilter(false)" style="color:var(--muted)">None</a>
+            <button type="button" onclick="_setExportCatFilter(true)" aria-label="Select all export categories"
+              style="background:none;border:none;padding:0;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline">All</button> ·
+            <button type="button" onclick="_setExportCatFilter(false)" aria-label="Clear all export categories"
+              style="background:none;border:none;padding:0;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline">None</button>
           </span>
         </div>
-        <div id="exportCatFilter" style="display:flex;flex-wrap:wrap;gap:2px 14px"></div>
+        <div id="exportCatFilter" role="group" aria-labelledby="exportCatFilterLabel" style="display:flex;flex-wrap:wrap;gap:2px 14px"></div>
       </div>
 
       <!-- column headers -->
@@ -2653,7 +2794,7 @@ function _renderSchemaTreeNodes(nodes, depth, assignedTargets, focusedTarget) {
       const isFocused = node.path === focusedTarget
       return `<div onclick="assignSchemaField('${escHtml(node.path)}')"
         style="display:flex;align-items:center;gap:6px;padding:3px 6px 3px ${indent}px;border-radius:3px;cursor:pointer;${isFocused ? 'background:rgba(59,130,246,0.10)' : ''}">
-        <span style="font-size:10px;color:${mapped ? 'var(--green)' : '#ccc'};flex-shrink:0;font-family:monospace">${mapped ? '✓' : '○'}</span>
+        <span style="font-size:10px;color:${mapped ? 'var(--green)' : 'var(--muted)'};flex-shrink:0;font-family:monospace">${mapped ? '✓' : '○'}</span>
         <span style="font-family:monospace;font-size:11px;color:${mapped ? 'var(--ink)' : 'var(--muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(node.path)}">${escHtml(node.label)}</span>
       </div>`
     } else {
@@ -2743,7 +2884,7 @@ function renderSchemaPanel() {
         const isFocused = f === focusedTarget
         return `<div onclick="assignSchemaField('${escHtml(f)}')"
           style="display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:3px;cursor:pointer;${isFocused ? 'background:rgba(59,130,246,0.08)' : ''}">
-          <span style="font-size:10px;color:${mapped ? 'var(--green)' : '#ccc'};flex-shrink:0;font-family:monospace">${mapped ? '✓' : '○'}</span>
+          <span style="font-size:10px;color:${mapped ? 'var(--green)' : 'var(--muted)'};flex-shrink:0;font-family:monospace">${mapped ? '✓' : '○'}</span>
           <span style="font-family:monospace;font-size:11px;color:${mapped ? 'var(--ink)' : 'var(--muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(f)}">${escHtml(f)}</span>
         </div>`
       }).join('')
@@ -2779,7 +2920,7 @@ function fieldRow(f, i) {
   const rawTrunc = rawStr.length > 48 ? rawStr.slice(0, 48) + '…' : rawStr
 
   // target side: transformed value preview — nothing to preview if there's no target to write to
-  const preview = f.target ? previewTransform(f.source, f.transform) : '<span style="color:#ddd">unassigned</span>'
+  const preview = f.target ? previewTransform(f.source, f.transform) : '<span style="color:var(--muted)">unassigned</span>'
 
   const isFocused = focusedRow === i
   const rowBg    = excluded ? '#fafafa' : isFocused ? 'var(--stone)' : 'var(--white)'
@@ -2804,11 +2945,13 @@ function fieldRow(f, i) {
       onblur="commitRename(${i})">`
     toControl = `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
       <select id="tsel-${i}" onchange="onTargetSelect(${i},this.value)"
-        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'#bbb'};outline:none;flex:1;padding:0 0 1px;cursor:pointer"
+        aria-label="Target field for ${escHtml(f.source || 'row ' + (i + 1))}"
+        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'var(--muted)'};outline:none;flex:1;padding:0 0 1px;cursor:pointer"
         ${excluded?'disabled':''}>${targetOpts}</select>
       ${renameInput}
       ${excluded ? '' : `<button onclick="startRename(${i})" title="Rename target field name"
-        style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#ccc;font-size:11px;padding:0 2px;line-height:1" id="rename-btn-${i}">✏</button>`}
+        aria-label="Rename target field for ${escHtml(f.source || 'this row')}"
+        style="flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:0 2px;line-height:1" id="rename-btn-${i}"><span aria-hidden="true">✏</span></button>`}
     </div>`
   } else {
     // free-text with datalist — avoids the disappearing-option problem when no schema is set
@@ -2816,7 +2959,8 @@ function fieldRow(f, i) {
     const dlId = `tdl-${i}`
     toControl = `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
       <input id="tsel-${i}" list="${dlId}" value="${escHtml(f.target)}" placeholder="target field name"
-        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'#bbb'};outline:none;flex:1;padding:0 0 1px"
+        aria-label="Target field for ${escHtml(f.source || 'row ' + (i + 1))}"
+        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'var(--muted)'};outline:none;flex:1;padding:0 0 1px"
         onchange="onTargetSelect(${i},this.value.trim())"
         ${excluded?'disabled':''}>
       <datalist id="${dlId}">${knownTargets.map(t=>`<option value="${escHtml(t)}">`).join('')}</datalist>
@@ -2829,7 +2973,7 @@ function fieldRow(f, i) {
     <!-- FROM -->
     <div style="padding:10px 12px;${dimText}">
       <div style="font-family:monospace;font-size:11px;font-weight:600;color:${mutedCol};margin-bottom:3px">${escHtml(f.source)}</div>
-      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(rawStr)}">${escHtml(rawTrunc) || '<span style="color:#ddd">no sample value</span>'}</div>
+      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(rawStr)}">${escHtml(rawTrunc) || '<span style="color:var(--muted)">no sample value</span>'}</div>
     </div>
 
     <!-- arrow -->
@@ -2838,12 +2982,13 @@ function fieldRow(f, i) {
     <!-- TO -->
     <div style="padding:10px 12px;${dimText}">
       ${toControl}
-      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${excluded ? '<span style="color:#ddd">excluded</span>' : preview}</div>
+      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${excluded ? '<span style="color:var(--muted)">excluded</span>' : preview}</div>
     </div>
 
     <!-- transform -->
     <div style="padding:10px 8px;display:flex;align-items:center;border-left:1px solid var(--hairline)">
       <select onchange="updateField(${i},'transform',this.value);rerenderRow(${i})"
+        aria-label="Transform for ${escHtml(f.source || 'row ' + (i + 1))}"
         style="font-family:var(--font);font-size:11px;border:1px solid var(--hairline);border-radius:3px;padding:3px 5px;background:var(--stone);outline:none;width:100%;color:${excluded?'var(--muted)':'var(--ink)'}"
         ${excluded?'disabled':''}>${opts}</select>
     </div>
@@ -2851,6 +2996,7 @@ function fieldRow(f, i) {
     <!-- include toggle -->
     <div style="display:flex;align-items:center;justify-content:center;border-left:1px solid var(--hairline)">
       <input type="checkbox" ${f.include?'checked':''} onchange="updateField(${i},'include',this.checked);rerenderRow(${i})"
+        aria-label="Include ${escHtml(f.source || 'row ' + (i + 1))} in the export"
         style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
     </div>
   </div>`
@@ -2997,7 +3143,11 @@ async function saveMap() {
     body: JSON.stringify({ ...currentMap, targetSchema: toStoredSchema(currentMap.targetSchema) }),
   })
   const msg = document.getElementById('emSaveMsg')
-  if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000) }
+  if (msg) {
+    msg.textContent = 'Saved'
+    msg.style.display = 'block'
+    setTimeout(() => { msg.style.display = 'none'; msg.textContent = '' }, 2000)
+  }
   await loadExportMaps()
 }
 
@@ -3072,7 +3222,7 @@ async function showNewMapForm() {
             <div style="font-size:12px;font-weight:600">${escHtml(t.name)}</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4">${escHtml(t.description)}</div>
           </div>
-          <button class="btn btn-solid" style="flex-shrink:0" onclick="useTemplate('${t.key}')">Use</button>
+          <button class="btn btn-solid" style="flex-shrink:0" onclick="useTemplate('${t.key}')" aria-label="Use template ${escHtml(t.name)}">Use</button>
         </div>`).join('')}
     </div>
     <div style="font-size:11px;color:var(--muted);margin:-10px 0 16px">— or build a custom mapping below —</div>
@@ -3085,22 +3235,22 @@ async function showNewMapForm() {
       <div style="display:flex;flex-direction:column;gap:14px">
 
         <div class="form-row">
-          <label>Name <span style="color:var(--red)">*</span></label>
+          <label for="nmName">Name <span style="color:var(--red)">*</span></label>
           <input type="text" id="nmName" placeholder="e.g. BigCommerce v2, Algolia, Shopify, Klaviyo" autofocus>
         </div>
 
         <div class="form-row">
-          <label>Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — helps AI find the right schema)</span></label>
+          <label for="nmDesc">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — helps AI find the right schema)</span></label>
           <textarea id="nmDesc" rows="2" placeholder="e.g. Algolia product search with BigCommerce v2 integration — include custom_fields, variants"></textarea>
         </div>
 
         <div class="form-row">
-          <label>Schema docs URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — paste the vendor's schema or indexing docs page)</span></label>
+          <label for="nmSchemaUrl">Schema docs URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — paste the vendor's schema or indexing docs page)</span></label>
           <input type="url" id="nmSchemaUrl" placeholder="https://docs.example.com/schema" style="font-family:monospace;font-size:11px">
         </div>
 
         <div class="form-row">
-          <label>Paste schema <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — paste a sample record directly if you have one)</span></label>
+          <label for="nmSchema">Paste schema <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — paste a sample record directly if you have one)</span></label>
           <textarea id="nmSchema" rows="4" placeholder='{ "id": "abc", "title": "...", "price": 0 }'
             style="font-family:monospace;font-size:10px" oninput="onNewMapSchemaInput()"></textarea>
           <div id="nmSchemaStatus" style="font-size:10px;margin-top:4px;display:none"></div>
@@ -3118,6 +3268,7 @@ async function showNewMapForm() {
   // also update schema panel to show creation hint
   const panel = document.getElementById('exportSchemaPanel')
   if (panel) panel.innerHTML = `<div style="padding:20px 16px;font-size:11px;color:var(--muted);line-height:1.6">Set a target schema in the form to see its fields here and get a smarter AI draft.</div>`
+  _focusView('exportEditorArea')
 }
 
 async function useTemplate(key) {
@@ -3180,7 +3331,7 @@ function _previewSchemaPanel(schema) {
     ? _renderSchemaTreeNodes(schema.tree, 0, none, null)
     : schema.fields.map(f =>
         `<div style="display:flex;align-items:center;gap:6px;padding:3px 6px">
-          <span style="font-size:10px;color:#ccc;flex-shrink:0;font-family:monospace">○</span>
+          <span style="font-size:10px;color:var(--muted);flex-shrink:0;font-family:monospace">○</span>
           <span style="font-family:monospace;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(f)}</span>
         </div>`).join('')
   panel.innerHTML = `
@@ -3276,17 +3427,26 @@ async function createBlankMap() {
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────
+// The route list comes from the server rather than being hardcoded here, so adding a
+// provider route in api.ts lights it up in this dropdown with no change to this file.
+let _routes = []
+
 async function _loadSettingsTab() {
   try {
     const s = await fetch('/api/settings').then(r => r.json())
     document.getElementById('sCatalogPath').value  = s.catalogPath  ?? ''
     document.getElementById('sImagesPath').value   = s.imagesPath   ?? ''
-    const modelEl = document.getElementById('sModel')
-    if (modelEl) modelEl.value = s.model ?? 'gpt-image-1'
-    const ok  = '<span style="color:var(--green)">✓ configured</span>'
-    const bad = '<span style="color:var(--red)">✗ missing</span>'
-    document.getElementById('sAnthropicKey').innerHTML = s.anthropicKey ? ok : bad
-    document.getElementById('sOpenaiKey').innerHTML    = s.openaiKey    ? ok : bad
+
+    _routes = s.routes ?? []
+    const providerEl = document.getElementById('sProvider')
+    providerEl.innerHTML = _routes
+      .map(r => `<option value="${escHtml(r.key)}">${escHtml(r.label)}</option>`).join('')
+    providerEl.value = s.provider ?? 'direct'
+
+    document.getElementById('sTextModel').value     = s.textModel     ?? ''
+    document.getElementById('sTextModelFast').value = s.textModelFast ?? ''
+    document.getElementById('sImageModel').value    = s.imageModel    ?? ''
+    _renderRouteKeys()
   } catch (err) {
     console.error('Settings load failed:', err)
   }
@@ -3320,11 +3480,13 @@ function _catItemCount(siteId, cat) {
 function _catChipHtml(site, cat) {
   const n = _catItemCount(site.id, cat)
   const removable = n === 0
-  const title = removable ? `Remove "${cat}"` : `Remove its ${n} product${n > 1 ? 's' : ''} first`
+  // No inner double quotes — this string goes into title= and aria-label=, and a raw quote
+  // terminates the attribute, truncating the accessible name to "Remove ".
+  const title = removable ? `Remove category ${cat}` : `Cannot remove ${cat} — remove its ${n} product${n > 1 ? 's' : ''} first`
   return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;background:var(--stone);border:1px solid var(--hairline);border-radius:20px;padding:2px 4px 2px 9px;margin:2px 4px 2px 0">
     ${escHtml(cat)}
-    <button onclick="removeCategoryFromSite('${site.id}','${cat}')" title="${title}" ${removable ? '' : 'disabled'}
-      style="font-family:var(--font);font-size:12px;line-height:1;width:16px;height:16px;border-radius:50%;border:none;background:none;cursor:${removable ? 'pointer' : 'not-allowed'};color:${removable ? 'var(--muted)' : '#ccc'};padding:0">×</button>
+    <button onclick="removeCategoryFromSite('${site.id}','${cat}')" title="${title}" aria-label="${title}" ${removable ? '' : 'disabled'}
+      style="font-family:var(--font);font-size:12px;line-height:1;width:16px;height:16px;border-radius:50%;border:none;background:none;cursor:${removable ? 'pointer' : 'not-allowed'};color:${removable ? 'var(--muted)' : 'var(--muted)'};padding:0"><span aria-hidden="true">×</span></button>
   </span>`
 }
 
@@ -3339,7 +3501,7 @@ function _renderSitesSettings() {
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px">
         <div style="font-size:12.5px;font-weight:600">${escHtml(site.label)}</div>
         ${removable
-          ? `<button class="btn btn-ghost" onclick="removeSite('${site.id}')" style="flex-shrink:0;font-size:10.5px;color:var(--red);border-color:#f0c4c4">Remove</button>`
+          ? `<button class="btn btn-ghost" onclick="removeSite('${site.id}')" aria-label="Remove catalog ${escHtml(site.label)}" style="flex-shrink:0;font-size:10.5px;color:var(--red);border-color:#f0c4c4">Remove</button>`
           : `<span style="flex-shrink:0;font-size:10.5px;color:var(--muted)" title="${itemCount > 0 ? 'Remove its products first' : 'At least one catalog must remain'}">${itemCount > 0 ? itemCount + ' product' + (itemCount > 1 ? 's' : '') : ''}</span>`}
       </div>
       <div style="margin-bottom:10px">
@@ -3347,12 +3509,13 @@ function _renderSitesSettings() {
       </div>
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px">
         <input type="text" id="sNewCat-${site.id}" placeholder="e.g. electronics-accessories"
+          aria-label="New category for ${escHtml(site.label)}"
           style="flex:1;font-size:12px;padding:6px 8px;border:1px solid var(--hairline);border-radius:4px;outline:none"
           onkeydown="if(event.key==='Enter'){event.preventDefault();addCategoryToSite('${site.id}')}">
         <button class="btn btn-ghost" onclick="addCategoryToSite('${site.id}')" style="flex-shrink:0;font-size:11px">+ Category</button>
       </div>
       <div>
-        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:4px">Base image prompt <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa">({item} is replaced per product)</span></label>
+        <label for="sBasePrompt-${site.id}" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:4px">Base image prompt <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">({item} is replaced per product)</span></label>
         <textarea id="sBasePrompt-${site.id}" rows="3"
           style="width:100%;box-sizing:border-box;font-family:var(--font);font-size:11px;padding:6px 8px;border:1px solid var(--hairline);border-radius:4px;outline:none;resize:vertical">${escHtml(site.basePrompt || '')}</textarea>
         <div style="display:flex;justify-content:flex-end;margin-top:4px">
@@ -3429,17 +3592,51 @@ async function saveSiteBasePrompt(siteId) {
   toast('Base prompt saved', 'success')
 }
 
-async function saveModel() {
-  const val = document.getElementById('sModel')?.value
-  if (!val) return
+// Shows a configured/missing line per env key the *selected* route needs. Re-runs on
+// change so switching the dropdown immediately tells you whether that route can work,
+// before you save it and find out on the next billed call.
+function _renderRouteKeys() {
+  const el = document.getElementById('sRouteKeys')
+  if (!el) return
+  const selected = document.getElementById('sProvider')?.value
+  const route = _routes.find(r => r.key === selected)
+  if (!route) { el.innerHTML = ''; return }
+  const ok  = '<span style="color:var(--green)"><span aria-hidden="true">✓</span> configured</span>'
+  const bad = '<span style="color:var(--red)"><span aria-hidden="true">✗</span> missing</span>'
+  el.innerHTML = Object.entries(route.keys).map(([name, present]) => `
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px"><code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">${escHtml(name)}</code></span>
+      <span style="font-size:11px;font-weight:600">${present ? ok : bad}</span>
+    </div>`).join('')
+}
+
+async function saveModels() {
+  const patch = {
+    provider:      document.getElementById('sProvider').value,
+    textModel:     document.getElementById('sTextModel').value.trim(),
+    textModelFast: document.getElementById('sTextModelFast').value.trim(),
+    imageModel:    document.getElementById('sImageModel').value.trim(),
+  }
+  const err = document.getElementById('sModelErr')
   const res = await fetch('/api/config', {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ model: val }),
+    body: JSON.stringify(patch),
   })
-  if (!res.ok) { toast('Error: could not save model'); return }
-  config.model = val
+  // The server validates the route name and the model-ID shape; show what it said rather
+  // than a generic failure, since a rejected value here is almost always a typo.
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    if (err) { err.textContent = body.error ?? 'Could not save models'; err.style.display = 'block' }
+    return
+  }
+  if (err && err.textContent) { err.style.display = 'none'; err.textContent = '' }
+  Object.assign(config, patch)
   const msg = document.getElementById('sModelMsg')
-  if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000) }
+  if (msg) {
+    msg.textContent = 'Saved'
+    msg.style.display = 'block'
+    setTimeout(() => { msg.style.display = 'none'; msg.textContent = '' }, 2000)
+  }
 }
 </script>
 </body>

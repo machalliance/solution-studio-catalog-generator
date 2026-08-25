@@ -1,14 +1,108 @@
-node_modules/
-data/images/
-data/backups/
-data/exports/*.json
-.env
-.claude/
+# Dependencies
+node_modules
+jspm_packages/
+.pnp
+.pnp.js
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# Internal dev documentation — not meant to be part of the public/org repo history.
-CLAUDE.md
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Caches
+.cache/
+.npm/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.vite/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime data. The directories themselves are tracked (via .gitkeep) even though their
+# contents aren't: docker-compose.yml bind-mounts all four, and Docker creates a missing
+# bind-mount source as root-owned — which the runtime image, running as the non-root
+# `node` user, then can't write to. Keeping them in the checkout means a fresh clone
+# mounts host-owned directories that are writable from inside the container.
+data/catalog/*
+!data/catalog/.gitkeep
+data/images/*
+!data/images/.gitkeep
+data/backups/*
+!data/backups/.gitkeep
+data/exports/*.json
+pids/
+*.pid
+*.seed
+*.pid.lock
 
 # Runtime state — regenerated on first use (see loadConfig()/loadSites() fallbacks in
 # src/products/api.ts), not meant to ship with the repo so a fresh checkout starts clean.
 src/products/config.json
 src/products/sites.json
+
+# Tests / coverage
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+
+# Editors / IDEs
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS cruft
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Agent / tooling state
+.claude/
+
+# Temp files
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+*.rej

@@ -6,9 +6,14 @@ import { fileURLToPath } from 'node:url'
 import { imageGenRoutes, catalogRoutes } from './products/api.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const ROOT      = join(__dirname, '../')
+// Overridable only so a test run can point the data paths at a temp directory —
+// mirrors the same variable in products/api.ts. Unset in normal operation.
+const ROOT      = process.env.APP_ROOT || join(__dirname, '../')
 const DATA_DIR  = join(ROOT, 'data')
-const IMAGES    = join(DATA_DIR, 'images')
+// Reads IMAGES_PATH the same way products/api.ts does. The two have to agree: api.ts
+// writes generated images (and the manifest) to IMAGES_PATH, and this is what serves
+// them back, so honoring the override in only one of the two 404s every thumbnail.
+const IMAGES    = process.env.IMAGES_PATH || join(DATA_DIR, 'images')
 const UI_HTML   = join(__dirname, 'products/ui.html')
 
 // Ensure backups/exports dirs exist (catalog and images are volume-mounted)
@@ -36,7 +41,7 @@ function requireAuth(req: Request): Response | null {
 // cross-origin form/fetch with text/plain is a "simple" request that skips preflight
 // entirely and would otherwise be processed. Every state-changing call therefore has
 // to prove it came from this origin. Same-origin browser requests always send Origin
-// on writes; non-browser callers (curl, the Greeter adapter) send none at all, and a
+// on writes; non-browser callers (curl, a service adapter) send none at all, and a
 // missing header is allowed — only a header naming a *different* origin is rejected.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
@@ -52,7 +57,7 @@ function requireSameOrigin(c: any): Response | null {
 }
 
 // ── App ────────────────────────────────────────────────────────────────────────
-const app = new Hono()
+export const app = new Hono()
 
 // Catch anything a route handler throws (bad JSON body, unexpected file I/O error, etc.)
 // and return it in the same {error} shape every route already uses, instead of Hono's
@@ -92,9 +97,15 @@ app.use('/api/*', async (c, next) => {
 })
 app.route('/api', imageGenRoutes)
 
-// Catalog REST API — gated by bearer token for remote consumers
+// Catalog REST API — gated by bearer token for remote consumers, and by the same
+// same-origin check as /api/*. Both, because they answer different questions and the
+// token is optional: with STUDIO_API_TOKEN unset requireAuth waves everything through,
+// and /catalog/* mounts the same mutating handlers /api/* does (generate, delete image),
+// so without the origin check a page the user has open could drive them cross-origin as
+// a no-preflight "simple" request. It costs legitimate consumers nothing — a non-browser
+// caller sends no Origin, and a missing Origin is allowed by design.
 app.use('/catalog/*', async (c, next) => {
-  const err = requireAuth(c.req.raw)
+  const err = requireSameOrigin(c) ?? requireAuth(c.req.raw)
   if (err) return err
   await next()
 })
@@ -107,8 +118,16 @@ app.get('/', c => {
   return c.html(html)
 })
 
-// ── Start ──────────────────────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────────────────
+// Skipped when SKIP_LISTEN is set, so the test suite can import `app` and drive it
+// through app.request() without binding a port. The container never sets it.
 const PORT = parseInt(process.env.PORT ?? '3004', 10)
-serve({ fetch: app.fetch, port: PORT }, () => {
-  console.log(`Product Catalog Generator running → http://localhost:${PORT}`)
-})
+if (!process.env.SKIP_LISTEN) {
+  // Left on the default (every interface, dual-stack): the process sits inside a
+  // container, so the UI has to be reachable from outside it — and the in-container
+  // healthcheck hits localhost, which can resolve to ::1. docker-compose is what
+  // narrows the exposure, publishing this port to the host's loopback only.
+  serve({ fetch: app.fetch, port: PORT }, () => {
+    console.log(`Product Catalog Generator running → http://localhost:${PORT}`)
+  })
+}
