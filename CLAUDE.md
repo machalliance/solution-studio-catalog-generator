@@ -107,6 +107,8 @@ node scripts/runner.mjs serve --url http://localhost:3004 --goal "..."   # inter
 
 Read its findings with judgment — the unattended crawl only visits the start page, so "live region never announced" means *not reached*, not *broken*. Confirm interactively before changing anything, and confirm a fix the same way.
 
+Coverage so far: landing, product grid, item detail, the creator panel, exports (list, editor, new-map form), settings, and the lightbox. Both viewports.
+
 Conventions this audit established, all of which a rule scanner passes straight over:
 
 - **Anything clickable must be a real control.** A `<span onclick>` or an `<a>` with no `href` is not focusable and has no role — it is mouse-only, and that is a 2.1.1 blocker. Use `<button type="button">` and reset the UA styling.
@@ -114,6 +116,9 @@ Conventions this audit established, all of which a rule scanner passes straight 
 - **A live region announces on content change, not on becoming visible.** Toggling `display` or opacity on text that is already in the DOM announces nothing. Write the text when the event happens (`flashMsg()` does this) and start the region empty.
 - **Swapping a view must move focus.** `setTab()` calls `_focusView()` to focus the revealed container, which is why each one carries `role="region"` and an `aria-label` — focusing a nameless `<div>` announces nothing.
 - **A `placeholder` is not a label.** It satisfies a name check and then disappears as soon as someone types.
+- **Anything that replaces what fills the screen must move focus into it.** `setTab()`, `selectCategory()`, `selectItem()` and `showCreator()` all call `_focusView()`, and every target carries a role and an `aria-label` — focusing a nameless `<div>` announces nothing. Without this, focus stays on a control that was just hidden and the browser drops it to `<body>`.
+- **Only one real modal exists** (the lightbox) and it carries the full contract: `role="dialog"` + `aria-modal` + a name, focus moved in on open, Tab contained, Escape to close, focus restored to the trigger. Anything new that overlays the page owes the same.
+- **Watch for raw quotes in generated attributes.** `aria-label="Remove "tile""` silently truncates to `Remove `. A previous fix here shipped exactly that bug and the next tester run caught it.
 
 Known and accepted: WCAG 2.4.13 Focus Appearance (AAA) is not fully met — the bar here is AA. Focus rings on the dark nav were raised from ~1.8:1 to ~11:1; what remains is a few small controls and the skip link.
 

@@ -310,7 +310,11 @@ nav {
 .spin { width: 24px; height: 24px; border: 2px solid var(--hairline); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .item-info { padding: 8px 8px 10px; }
-.item-name { font-family: var(--font-display); font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* A <button> now (it is what makes a product selectable by keyboard), so the UA styling is
+   reset back to the plain text it has always looked like. */
+.item-name { font-family: var(--font-display); font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  background: none; border: none; padding: 0; text-align: left; width: 100%; cursor: pointer; }
+.item-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .item-id { font-family: monospace; font-size: 10px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-badges { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
 .badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.04em; }
@@ -419,6 +423,10 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   transition: opacity 0.12s;
 }
 .lightbox-close:hover { opacity: 1; }
+.lightbox-close:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: 2px; }
+.detail-img-btn { display: block; width: 100%; padding: 0; border: none; background: none; cursor: zoom-in; }
+.detail-img-btn img { display: block; width: 100%; }
+.detail-img-btn:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: -2px; }
 @keyframes lightbox-bg-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lightbox-img-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
 
@@ -504,7 +512,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 
 <div class="toast-stack" id="toastStack"></div>
 
-<div class="lightbox" id="lightbox">
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview">
   <button class="lightbox-close" title="Close" aria-label="Close"><span aria-hidden="true">×</span></button>
   <img id="lightboxImg" src="" alt="">
 </div>
@@ -600,7 +608,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     <div class="empty">Select a category</div>
   </main>
 
-  <aside class="detail" id="detailPanel"></aside>
+  <aside class="detail" id="detailPanel" aria-label="Product detail"></aside>
 </div>
 
 <div class="backups-view" id="backupsView" role="region" aria-label="Snapshots">
@@ -617,7 +625,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   </div>
 </div>
 
-<div id="creatorPanel" class="creator-panel"></div>
+<div id="creatorPanel" class="creator-panel" role="region" aria-label="Add items"></div>
 
 <div class="backups-view" id="exportsView" role="region" aria-label="Exports" style="display:none">
   <div class="exports-layout">
@@ -632,7 +640,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     </div>
 
     <!-- Middle: map editor -->
-    <div class="exports-editor" id="exportEditorArea">
+    <div class="exports-editor" id="exportEditorArea" role="region" aria-label="Export map editor">
       <div style="color:var(--muted);font-size:13px;padding-top:40px;text-align:center">
         Select an export map or create a new one
       </div>
@@ -869,10 +877,11 @@ function catBtn(g) {
 
 function selectCategoryByName(site, cat) {
   const g = allData.find(d => d.skin === site && d.category === cat) || { skin: site, category: cat, items: [] }
-  selectCategory(g)
+  // Always a user action — a landing card or a sidebar category — so focus follows.
+  selectCategory(g, { focus: true })
 }
 
-function selectCategory(g) {
+function selectCategory(g, { focus = false } = {}) {
   // Navigating into a category from a different catalog (e.g. a landing-page card)
   // makes that catalog the current one too, so the sidebar and this selection agree.
   if (g.skin !== currentSiteId) {
@@ -893,6 +902,7 @@ function selectCategory(g) {
   if (btn) btn.classList.add('active')
   closeDetail()
   renderGrid()
+  if (focus) _focusView('gridPanel')
 }
 
 // ── LANDING (home screen) ────────────────────────────────────────
@@ -910,6 +920,7 @@ function showLanding() {
   document.getElementById('creatorPanel').classList.remove('open')
   document.getElementById('landingView').style.display = 'block'
   renderLanding()
+  _focusView('landingView')
 }
 
 function _landingCodeLine(key, val, isLast) {
@@ -960,7 +971,9 @@ function renderLanding() {
     const cats = allData.filter(g => g.skin === site.id)
     const total = cats.reduce((n, g) => n + g.items.length, 0)
     const firstCat = site.categories[0]
-    const meta = total ? `${total} products · ${cats.length} categories` : 'No categories yet — add one in Settings'
+    const meta = !site.categories.length ? 'No categories yet — add one in Settings'
+      : total ? `${total} products · ${site.categories.length} categories`
+      : `No products yet · ${site.categories.length} categories`
     const body = `
         <div class="site-card-id">${escHtml(site.id)}</div>
         <div class="site-card-label">${escHtml(site.label)}</div>
@@ -1054,7 +1067,7 @@ function itemCard(item) {
   return `<div class="item-card${item.hasImage ? '' : ' no-image'}${checked ? ' checked' : ''}" id="card-${item.objectID}" onclick='selectItem("${item.objectID}")'>
     <input type="checkbox" class="item-cb" ${checked ? 'checked' : ''}
       onclick="event.stopPropagation();toggleSelect('${item.objectID}',this)"
-      title="Select for deletion">
+      aria-label="Select ${escHtml(item.name)} for deletion">
     <div class="item-thumb">
       ${imgSrc ? `<img src="${imgSrc}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
       <div class="placeholder" ${imgSrc ? 'style="display:none"' : ''}>
@@ -1064,7 +1077,7 @@ function itemCard(item) {
       <div class="spinner" id="spin-${item.objectID}"><div class="spin"></div></div>
     </div>
     <div class="item-info">
-      <div class="item-name">${escHtml(item.name)}</div>
+      <button type="button" class="item-name" onclick='event.stopPropagation();selectItem("${item.objectID}")'>${escHtml(item.name)}</button>
       <div class="item-id">${escHtml(item.objectID)}</div>
       <div class="item-badges">
         ${item.hasImage && item.isAIGenerated ? '<span class="badge badge-done">✓ generated</span>' : item.hasImage ? '<span class="badge badge-original">⬡ original</span>' : '<span class="badge badge-missing">⚠ no image</span>'}
@@ -1083,6 +1096,9 @@ function selectItem(objectID) {
   const card = document.getElementById(`card-${objectID}`)
   if (card) card.classList.add('selected')
   renderDetail()
+  // The detail panel is what just appeared; leaving focus on the card in the grid means a
+  // screen-reader user is told nothing opened, and Tab continues past it.
+  _focusView('detailPanel')
 }
 
 function selectAll() {
@@ -1178,7 +1194,8 @@ function renderDetail() {
   panel.innerHTML = `
     ${stepIndicatorsHTML(item)}
     <div class="detail-img-wrap" id="detailImgWrap">
-      ${imgSrc ? `<img id="detailImg" src="${imgSrc}">` : ''}
+      ${imgSrc ? `<button type="button" class="detail-img-btn" aria-label="View ${escHtml(item.name)} full size"
+        onclick="openLightbox(document.getElementById('detailImg').src)"><img id="detailImg" src="${imgSrc}" alt=""></button>` : ''}
       <div class="placeholder" id="detailPlaceholder" ${imgSrc ? 'style="display:none"' : ''}>☐</div>
       <div class="spinner" id="detailSpin"><div class="spin"></div></div>
     </div>
@@ -1654,14 +1671,41 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeLightbox()
 })
+// The lightbox is the app's only true modal — a fixed overlay covering everything. That
+// carries three obligations a plain div doesn't meet on its own: focus has to move into it
+// (or the keyboard user is left behind it), Tab must not escape while it's covering the
+// page, and focus has to come back to whatever opened it. Escape already closed it via the
+// global keydown handler; that still works and now also restores focus.
+let _lightboxReturnFocus = null
+
 function openLightbox(src) {
   if (!src) return
+  _lightboxReturnFocus = document.activeElement
   document.getElementById('lightboxImg').src = src
-  document.getElementById('lightbox').classList.add('open')
+  const box = document.getElementById('lightbox')
+  box.classList.add('open')
+  box.querySelector('.lightbox-close')?.focus()
 }
+
 function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open')
+  const box = document.getElementById('lightbox')
+  if (!box.classList.contains('open')) return
+  box.classList.remove('open')
+  // Back to the control that opened it, so the keyboard user resumes where they left off
+  // rather than at the top of the document.
+  _lightboxReturnFocus?.focus?.()
+  _lightboxReturnFocus = null
 }
+
+// Only the close button is focusable inside, so containment is just "keep Tab on it"
+// rather than a general trap over a list of tabbables.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return
+  const box = document.getElementById('lightbox')
+  if (!box.classList.contains('open')) return
+  e.preventDefault()
+  box.querySelector('.lightbox-close')?.focus()
+})
 
 // Shared fetch wrapper: makes the request, parses JSON, and throws on a non-2xx
 // response or an {error} payload — callers just try/catch instead of hand-checking
@@ -1692,12 +1736,18 @@ function toast(message, type = 'error') {
 function showCreator(mode) {
   pendingItems = []
   _pendingCtr  = 0
-  // hide all standard panels — creator sits above them
+  // hide all standard panels — creator sits above them. landingView has to go too: opening
+  // the creator from the landing screen used to leave it visible behind, so Tab walked the
+  // background cards before ever reaching the form.
   document.getElementById('mainLayout').style.display    = 'none'
   document.getElementById('productsToolbar').style.display = 'none'
+  document.getElementById('landingView').style.display   = 'none'
   closeHowItWorks()
   document.getElementById('creatorPanel').classList.add('open')
   _renderCreator(mode)
+  // Same reason as the tab views: swapping what fills the screen without moving focus
+  // leaves a screen-reader user on a control that is no longer there.
+  _focusView('creatorPanel')
 }
 
 function hideCreator() {
@@ -3146,7 +3196,7 @@ async function showNewMapForm() {
             <div style="font-size:12px;font-weight:600">${escHtml(t.name)}</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4">${escHtml(t.description)}</div>
           </div>
-          <button class="btn btn-solid" style="flex-shrink:0" onclick="useTemplate('${t.key}')">Use</button>
+          <button class="btn btn-solid" style="flex-shrink:0" onclick="useTemplate('${t.key}')" aria-label="Use template ${escHtml(t.name)}">Use</button>
         </div>`).join('')}
     </div>
     <div style="font-size:11px;color:var(--muted);margin:-10px 0 16px">— or build a custom mapping below —</div>
@@ -3192,6 +3242,7 @@ async function showNewMapForm() {
   // also update schema panel to show creation hint
   const panel = document.getElementById('exportSchemaPanel')
   if (panel) panel.innerHTML = `<div style="padding:20px 16px;font-size:11px;color:var(--muted);line-height:1.6">Set a target schema in the form to see its fields here and get a smarter AI draft.</div>`
+  _focusView('exportEditorArea')
 }
 
 async function useTemplate(key) {
@@ -3403,7 +3454,9 @@ function _catItemCount(siteId, cat) {
 function _catChipHtml(site, cat) {
   const n = _catItemCount(site.id, cat)
   const removable = n === 0
-  const title = removable ? `Remove "${cat}"` : `Remove its ${n} product${n > 1 ? 's' : ''} first`
+  // No inner double quotes — this string goes into title= and aria-label=, and a raw quote
+  // terminates the attribute, truncating the accessible name to "Remove ".
+  const title = removable ? `Remove category ${cat}` : `Cannot remove ${cat} — remove its ${n} product${n > 1 ? 's' : ''} first`
   return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;background:var(--stone);border:1px solid var(--hairline);border-radius:20px;padding:2px 4px 2px 9px;margin:2px 4px 2px 0">
     ${escHtml(cat)}
     <button onclick="removeCategoryFromSite('${site.id}','${cat}')" title="${title}" aria-label="${title}" ${removable ? '' : 'disabled'}
@@ -3422,7 +3475,7 @@ function _renderSitesSettings() {
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px">
         <div style="font-size:12.5px;font-weight:600">${escHtml(site.label)}</div>
         ${removable
-          ? `<button class="btn btn-ghost" onclick="removeSite('${site.id}')" style="flex-shrink:0;font-size:10.5px;color:var(--red);border-color:#f0c4c4">Remove</button>`
+          ? `<button class="btn btn-ghost" onclick="removeSite('${site.id}')" aria-label="Remove catalog ${escHtml(site.label)}" style="flex-shrink:0;font-size:10.5px;color:var(--red);border-color:#f0c4c4">Remove</button>`
           : `<span style="flex-shrink:0;font-size:10.5px;color:var(--muted)" title="${itemCount > 0 ? 'Remove its products first' : 'At least one catalog must remain'}">${itemCount > 0 ? itemCount + ' product' + (itemCount > 1 ? 's' : '') : ''}</span>`}
       </div>
       <div style="margin-bottom:10px">
