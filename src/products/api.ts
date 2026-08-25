@@ -1502,9 +1502,14 @@ function setNestedValue(obj: Record<string, any>, path: string, val: any) {
   const keys = path.split('.')
   if (keys.some(k => UNSAFE_PATH_KEYS.has(k))) return
   let cur = obj
+  // The walk below descends through computed keys, which semgrep flags as a prototype
+  // pollution sink. UNSAFE_PATH_KEYS is checked against every segment above and returns
+  // before this runs, so no polluting key can reach it — keep that guard if this function
+  // is ever refactored, because the suppression below assumes it.
   for (let i = 0; i < keys.length - 1; i++) {
     const k = keys[i]
     if (typeof cur[k] !== 'object' || cur[k] === null || Array.isArray(cur[k])) cur[k] = {}
+    // nosemgrep: javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop
     cur = cur[k]
   }
   cur[keys[keys.length - 1]] = val

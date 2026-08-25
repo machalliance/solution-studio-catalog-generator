@@ -18,4 +18,10 @@ COPY tsconfig.json vitest.config.ts ./
 COPY src ./src
 COPY test ./test
 
+# Drop to the base image's unprivileged user. /app is chowned first because npm ci and the
+# COPYs above run as root, and both consumers of this image write inside it: vitest caches
+# under node_modules, and the app-e2e service writes its throwaway data directory.
+RUN chown -R node:node /app
+USER node
+
 CMD ["npx", "vitest", "run"]

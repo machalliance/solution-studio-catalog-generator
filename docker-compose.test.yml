@@ -37,8 +37,10 @@ services:
       OPENAI_API_KEY: ""
       ANTHROPIC_API_KEY: ""
     command: ["sh", "-c", "mkdir -p /app/e2e-data/data/catalog /app/e2e-data/data/images /app/e2e-data/data/backups /app/e2e-data/data/exports && exec node_modules/.bin/tsx src/server.ts"]
+    # Owned by the image's unprivileged user (uid/gid 1000) — a tmpfs mounts root-owned by
+    # default, and the command below has to mkdir inside it.
     tmpfs:
-      - /app/e2e-data
+      - /app/e2e-data:uid=1000,gid=1000
     # Published on loopback so the same instance the specs drive can also be opened in a
     # browser on the host — the app binds every interface inside the container, and this
     # is what makes it reachable from outside it.
