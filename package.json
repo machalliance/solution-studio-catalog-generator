@@ -1,6 +1,6 @@
 {
   "name": "mach-alliance-catalog-generator",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Generates sample product catalogs for MACH Alliance reference implementations.",
   "private": true,
   "license": "MIT",

@@ -3,18 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Product Catalog Generator</title>
+<title>Product Catalog Generator — MACH Alliance</title>
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAD5klEQVRYCe1WX0hbVxj/JcYYY02DdvinbkVW3AbWFioUSikVbX0pFXxxFAJdi0KFtYm1ETVQlVps0Ri3Uq3MVcceNoQVbF9qKNTWh1LZcAzGoK52E8dWJeqtf9KYeHa/m3pzb5P0nrQPfekH995zfuf7ft/vnnz35NMx0fAOTf8Oc0up3wswKH+CjY0N+Hw+JSSNMzMzodPpovDXAcRDfEqzWCwwGo1KCKAi3LTp6Wkm5mFbzDr5SjaAlZeXs0AgsOmm+RwfH2fJhggH8en1YAUFBWxhYUEVHyUgO1PP2KPt8jX69Tb6Spjb7VYFxpuEQiFWXFzMvnFZZQ7i2/uZUeKhl1SaZhEe3peCYwdNaGtrw9zcnHr7YswGBwexsfwrvjiaFmM1GtIUQCFdZ7dibWUJLpcrmkGBCIKA5uZm9NRZIW45l3G57fzQgDOfp2FgYACTk5Nxidvb23Fol4ADe14ptLgRAJcAinedTMcHVga73R6TbmpqCv19X+HyGUvM9XggtwBLmh7tpy0YGxvD8PBwFF99fT3OVhnxUVZS1NrrAE0Bdx6+kONPiIW199NkOJ1O+P1+Gfd6vfjl4W04bVtkbFQRJ4MxBpoCbt5bw92JsAgqLM85K/56+hSdnZ0SXTAYhMPhwJUvLTCbwofV70+C6P1pOUa6aEhTAIU43EsIhsLBB3YbUXXEjI6ODszOzqKvrw9Ww2NUHTbL7A7PIkRdXMYl4Lc/13H95opMeFl8WxZaRW1tLVpbW9Aj7srmSX3rgR+820+EXALI8cJ1AT4hfLZToTlt6RgZGcGx/WtSXZBPYJ3hnGeJhtzGLcBozkJL/3OZ+LxYcIUfJ+NSbeSz6/lhGY9nOPf+JRO3gKamJnzv1YMKjIwK7kH/NmRlhD+7/3whXPw2LLC0tPQlvfaDW0B2djYaGppg716UWa3pkfDmawKEFYaioiJUV1fLPlqDCIOWp7hOp+CT+TyM3I+cART28x/ruHF7VWLweDxISuI/jBISkJKSgq6uLtT3LEkFRxmppbW7F8XmA6isrERJSYkkhPeWkAAiraiowI5PDoEKjuxH7yrGJwMwmUzy4SQtcN4SFkC83d3d6PjOj+l/Qmi4Kkip6urqkJ+fz5k24vZGAgoLC3HcVoP9p57h739DyM3NRWNjY4Q1kZGyPYrXE4p8TPwHVLqy+fl5lpGRIbVZQ0NDqjXyFetQ7is3e0LiebUlU3XFeXl5aGlpxcTERNQ75OTkqDDqlHt7e6XLZrOp1srKylBTcxozMzMqnCapqakqTEfSVUiCE2q99bz9VwzutxYQgzMh6I2KMKEMGs7vBfwPdywY7pPCkpIAAAAASUVORK5CYII=">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600&family=Space+Grotesk:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --font: 'DM Sans', -apple-system, sans-serif;
-  --font-display: 'Newsreader', Georgia, serif;
-  --ink: #0F0F0D; --stone: #F5F4F1; --hairline: #E3E1DC;
+  /* MACH Alliance brand: Helvetica Neue for body, Montserrat for display,
+     ink #231F20 + yellow #FFCB1B. Yellow is a highlight only — it never carries
+     white text, which is why --accent stays the ink. */
+  --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-display: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  --ink: #231F20; --stone: #F5F4F1; --hairline: #E3E1DC;
   --muted: #767670; --white: #FFFFFF; --radius: 4px;
-  --accent: #1E2B4A; --accent-hover: #2A3C6A;
+  --brand-yellow: #FFCB1B; --brand-yellow-soft: #FFF6D6;
+  --accent: #231F20; --accent-hover: #3D3739;
   --green: #16a34a; --red: #dc2626;
 }
 body { font-family: var(--font); background: var(--stone); color: var(--ink); font-size: 13px; line-height: 1.5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -25,7 +30,10 @@ nav {
   padding: 0 20px 0 20px; display: flex; align-items: stretch; height: 44px; flex-shrink: 0;
   border-bottom: 1px solid rgba(255,255,255,0.07); gap: 0;
 }
-.nav-logo { font-size: 13px; font-weight: 600; color: white; letter-spacing: -0.02em; align-self: center; margin-right: 8px; white-space: nowrap; cursor: pointer; }
+.nav-brand { align-self: center; display: flex; align-items: center; margin-right: 10px; }
+.nav-brand img { height: 20px; width: auto; display: block; }
+.nav-brand-sep { align-self: center; width: 1px; height: 18px; background: rgba(255,255,255,0.18); margin-right: 10px; }
+.nav-logo { font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: white; letter-spacing: -0.02em; align-self: center; margin-right: 8px; white-space: nowrap; cursor: pointer; }
 .nav-logo span { color: rgba(255,255,255,0.4); font-weight: 400; }
 .nav-site-select {
   align-self: center; margin-right: 16px; font-family: var(--font); font-size: 11.5px; font-weight: 500;
@@ -36,14 +44,14 @@ nav {
 .nav-site-select option { background: #1a1a17; color: white; }
 .nav-tabs { display: flex; align-items: stretch; flex: 1; }
 .tab-btn {
-  font-family: var(--font); font-size: 12px; font-weight: 500;
+  font-family: var(--font-display); font-size: 12px; font-weight: 500;
   background: none; border: none; border-bottom: 2px solid transparent;
   color: rgba(255,255,255,0.45); padding: 0 16px;
   cursor: pointer; transition: color 0.15s, border-color 0.15s;
   white-space: nowrap; display: flex; align-items: center;
 }
 .tab-btn:hover { color: rgba(255,255,255,0.85); }
-.tab-btn.active { color: white; border-bottom-color: white; }
+.tab-btn.active { color: white; border-bottom-color: var(--brand-yellow); }
 .tab-settings { margin-left: auto; padding: 0 18px; font-size: 15px; }
 
 /* PRODUCTS TOOLBAR */
@@ -56,11 +64,11 @@ nav {
   padding: 5px 14px; border-radius: 20px; border: none; cursor: pointer;
   color: white; white-space: nowrap; background: var(--accent);
   display: inline-flex; align-items: center; gap: 6px;
-  box-shadow: 0 1px 2px rgba(30,43,74,0.28);
+  box-shadow: 0 1px 2px rgba(35,31,32,0.28);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
-.toolbar-btn:hover  { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(30,43,74,0.3); }
-.toolbar-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(30,43,74,0.28); }
+.toolbar-btn:hover  { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(35,31,32,0.3); }
+.toolbar-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(35,31,32,0.28); }
 .toolbar-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 .toolbar-btn svg { flex-shrink: 0; }
 
@@ -106,12 +114,12 @@ nav {
 /* ── Dev view (default) ─────────────────────────────────────────── */
 #devView {
   --dv-ink: #14151A; --dv-bg: #FAFAF9; --dv-white: #FFFFFF; --dv-hairline: #E5E4E0; --dv-muted: #6B6B70;
-  --dv-accent: #4F46E5; --dv-accent-ink: #FFFFFF;
+  --dv-accent: #231F20; --dv-accent-ink: #FFFFFF;
   --dv-code-bg: #1E1F29; --dv-code-key: #8AB4F8; --dv-code-str: #C3E88D; --dv-code-num: #F78C6C; --dv-code-punc: #6E7080; --dv-code-muted: #565866;
-  background: var(--dv-bg); color: var(--dv-ink); min-height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px;
+  background: var(--dv-bg); color: var(--dv-ink); min-height: 100%; font-family: var(--font); font-size: 14px;
 }
 #devView .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 32px 80px; }
-#devView .headline { font-family: 'Space Grotesk'; font-size: clamp(28px, 4.2vw, 42px); font-weight: 700; letter-spacing: -0.015em; line-height: 1.08; max-width: 640px; }
+#devView .headline { font-family: var(--font-display); font-size: clamp(28px, 4.2vw, 42px); font-weight: 700; letter-spacing: -0.015em; line-height: 1.08; max-width: 640px; }
 #devView .sub { margin-top: 14px; font-size: 15px; color: var(--dv-muted); max-width: 560px; line-height: 1.6; }
 
 #devView .hero-grid { margin-top: 32px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start; }
@@ -135,18 +143,18 @@ nav {
 #devView .section-label { font-family: 'JetBrains Mono'; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dv-muted); margin: 40px 0 14px; }
 #devView .sites-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
 #devView .site-card { background: var(--dv-white); border: 1px solid var(--dv-hairline); border-radius: 8px; padding: 16px 18px; text-decoration: none; color: inherit; cursor: pointer; }
-#devView .site-card:hover { border-color: var(--dv-accent); }
+#devView .site-card:hover { border-color: var(--brand-yellow); }
 #devView .site-card-id { font-family: 'JetBrains Mono'; font-size: 11px; color: var(--dv-accent); }
-#devView .site-card-label { font-family: 'Space Grotesk'; font-size: 17px; font-weight: 600; margin-top: 4px; }
+#devView .site-card-label { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-top: 4px; }
 #devView .site-card-meta { margin-top: 8px; font-size: 12px; color: var(--dv-muted); }
 
 #devView .actions-row { margin-top: 40px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 #devView .action-btn {
-  font-family: 'DM Sans'; font-size: 13px; font-weight: 600;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
   padding: 11px 20px; border-radius: 8px; border: 1px solid var(--dv-hairline); cursor: pointer;
   color: var(--dv-ink); background: var(--dv-white); text-decoration: none; display: inline-block;
 }
-#devView .action-btn:hover { border-color: var(--dv-accent); }
+#devView .action-btn:hover { border-color: var(--brand-yellow); }
 #devView .action-btn.primary { background: var(--dv-accent); color: var(--dv-accent-ink); border-color: var(--dv-accent); }
 #devView .action-btn.primary:hover { opacity: 0.9; }
 #devView .empty-note { margin-top: 32px; font-size: 14px; color: var(--dv-muted); }
@@ -154,7 +162,7 @@ nav {
 /* ── Demo view ──────────────────────────────────────────────────── */
 #demoView {
   --dm-ink: #0F0F0D; --dm-white: #FFFFFF; --dm-hairline: #E7E5DE; --dm-muted: #767670;
-  display: none; background: var(--dm-white); color: var(--dm-ink); font-family: 'DM Sans', sans-serif;
+  display: none; background: var(--dm-white); color: var(--dm-ink); font-family: var(--font);
 }
 #demoView .hero { position: relative; height: 88vh; min-height: 460px; overflow: hidden; background: #1a1a17; }
 #demoView .hero-slide { position: absolute; inset: 0; opacity: 0; animation: demo-slide-cycle 20s infinite; }
@@ -171,10 +179,12 @@ nav {
 }
 #demoView .hero-scrim { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,10,8,0.78) 0%, rgba(10,10,8,0.15) 45%, rgba(10,10,8,0.35) 100%); }
 #demoView .hero-nav { position: relative; z-index: 2; display: flex; align-items: center; padding: 24px 32px 0; }
-#demoView .hero-logo { font-family: 'DM Sans'; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.04em; text-transform: uppercase; }
+#demoView .hero-brand { height: 22px; width: auto; display: block; margin-right: 12px; }
+#demoView .hero-brand-sep { width: 1px; height: 16px; background: rgba(255,255,255,0.3); margin-right: 12px; }
+#demoView .hero-logo { font-family: var(--font-display); font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 0.04em; text-transform: uppercase; }
 #demoView .hero-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 32px 56px; }
 #demoView .hero-headline {
-  font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700;
+  font-family: var(--font-display); font-weight: 700;
   font-size: clamp(36px, 7vw, 76px); line-height: 0.98; letter-spacing: -0.01em; color: var(--dm-white);
   max-width: 900px;
 }
@@ -189,7 +199,7 @@ nav {
 }
 #demoView .index-row:first-of-type { border-top: 1px solid var(--dm-hairline); }
 #demoView .index-row-label { display: flex; align-items: baseline; gap: 16px; }
-#demoView .index-row-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.01em; transition: opacity 0.15s; }
+#demoView .index-row-name { font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.01em; transition: opacity 0.15s; }
 #demoView .index-row:hover .index-row-name { opacity: 0.55; }
 #demoView .index-row-cats { font-size: 12.5px; color: var(--dm-muted); }
 #demoView .index-row-count { font-size: 14px; color: var(--dm-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
@@ -197,7 +207,7 @@ nav {
 
 #demoView .demo-actions-row { max-width: 900px; margin: 8px auto 0; padding: 0 32px 80px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 #demoView .demo-action-btn {
-  font-family: 'DM Sans'; font-size: 13px; font-weight: 600;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
   padding: 12px 22px; border-radius: 24px; border: 1px solid var(--dm-ink); cursor: pointer;
   color: var(--dm-ink); background: var(--dm-white); text-decoration: none; display: inline-block;
   transition: background 0.12s, color 0.12s;
@@ -251,7 +261,7 @@ nav {
 }
 .item-card:hover { border-color: #c0bdb8; }
 .item-card.selected { border-color: var(--accent); }
-.item-card.checked { border-color: var(--accent); background: #eff6ff; }
+.item-card.checked { border-color: var(--accent); background: var(--brand-yellow-soft); }
 .item-card.checked.no-image { border-style: solid; }
 .item-cb {
   position: absolute; top: 6px; left: 6px; z-index: 3;
@@ -479,6 +489,8 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 </div>
 
 <nav>
+  <a class="nav-brand" href="https://machalliance.org/" target="_blank" rel="noopener noreferrer" title="MACH Alliance"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODcuMSAxNzYuMiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmZmZmY7fS5jbHMtMntmaWxsOiNmZmNiMWI7fTwvc3R5bGU+PC9kZWZzPjxnIGlkPSJMYXllcl8xLTIiPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMwLjk4LDE3MC4xMWgtMTQuOTFsLTIuNTYsNS4ySDUuMTlsMTQuMDYtMjcuMThoOC42NmwxNC4wNiwyNy4xOGgtOC40M2wtMi41Ni01LjJaTTI4LjIyLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODguMjUsMTY4Ljk0djYuMzdoLTI2LjIxdi0yNy4xOGg3LjkydjIwLjgxaDE4LjI5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEzNC45OCwxNjguOTR2Ni4zN2gtMjYuMjF2LTI3LjE4aDcuOTJ2MjAuODFoMTguMjlaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTU1LjUsMTc1LjMxdi0yNy4xOGg3LjkydjI3LjE4aC03LjkyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTIwOS4yNiwxNzAuMTFoLTE0LjkxbC0yLjU2LDUuMmgtOC4zMWwxNC4wNi0yNy4xOGg4LjY2bDE0LjA2LDI3LjE4aC04LjQzbC0yLjU2LTUuMlpNMjA2LjUxLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjcyLjQ3LDE0OC4xM3YyNy4xOGgtNi45NWwtMTcuNTUtMTcuODZ2MTcuODZoLTcuNjV2LTI3LjE4aDguMzlsMTYuMTEsMTYuNjJ2LTE2LjYyaDcuNjVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzE5LjkzLDE2NS42bDYuOCwzLjVjLTIuNTMsNC04LDcuMTEtMTUuMzQsNy4xMS0xMC4yNSwwLTE3LjE2LTUuMzItMTcuMTYtMTQuNDhzNi45MS0xNC40OCwxNy40Ny0xNC40OGM3LjAzLDAsMTIuNDcsMy4xOCwxNC45MSw3LjA3bC02LjgzLDMuNDljLTEuNzktMi43OS00LjU0LTQuMTEtOC4xOS00LjExLTUuNTksMC05LjMyLDIuODMtOS4zMiw4LjA0czMuNzMsOC4wNCw5LjMyLDguMDRjMy42NSwwLDYuNDUtMS4yNCw4LjM1LTQuMTZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzc2LjU4LDE2OS4yNXY2LjA2aC0yOXYtMjcuMThoMjguNTh2Ni4wNmgtMjAuNzd2NC40NmgxNy4xMnY1Ljc5aC0xNy4xMnY0LjgxaDIxLjJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzg3LjEsNy4yOGwtNS4yNi01LjI2aDBzMCwwLDAsMGgtMjguNjZ2NjEuMjdoLTQ1LjY1VjcuMjhsLTUuMjYtNS4yNmgtMjguNjR2Ny45NWMtNy41OS00LjY3LTE2LjI5LTcuNDQtMjUuNTgtOC4wMWgtNi43MWMtMTEuNTYuNzMtMjIuNDIsNS4wMy0zMS40LDEyLjQyLTkuNTUsNy44Ni0xNi4wNSwxOC41My0xOC43LDMwLjMzbC0yMi43OC0zOS40NS01LjI2LTUuMjYtMzYuNjMsNjMuNDNWNy4xMWwtNS4yNi01LjI2aC0yNi40MWwtMzMuMTMsNTcuMzdMMzEuNjksNy4xMWgwcy01LjI2LTUuMjYtNS4yNi01LjI2aDBzMCwwLDAsMEgwdjEwOS44OWw1LjI2LDUuMjZoMjguNjR2LTQ5Ljc3bDI2Ljc3LDQ2LjM2LDUuMjYsNS4yNywyNi43Ny00Ni4zN3YzOS4yNmw1LjI2LDUuMjZoMzYuMjdsMTEuNDgtMTkuODhoNDMuM2w4LjQ0LDE0LjYyLDUuMjYsNS4yNmgzMC4yOGwtMi0zLjQ3YzYuMDksMi4yNiwxMi41NywzLjQ3LDE5LjE0LDMuNDcsOC4yMiwwLDE2LjIyLTEuODksMjMuNTEtNS4zNHYuMDloMGw1LjI2LDUuMjZoMHMyOC42NCwwLDI4LjY0LDB2LTE5LjgxaDQ1LjY1djE0LjU1bDUuMjYsNS4yNmgyOC42NlY3LjI4aDBaTTE2NS4yNyw2My4yM2wyLjA5LTMuNjEsMi4wOSwzLjYxaC00LjE3Wk0yNzMuNjIsNzkuMDFsLTguNDUtNC44OC0yLjg0LDIuNTJjLTQuODIsNC4yNy0xMS4wMyw2LjYzLTE3LjQ4LDYuNjMtNi4wMywwLTExLjU3LTIuMTQtMTYuMDQtNS42LTIuODYtMy45LTQuNjgtOC42Mi01LjAyLTEzLjc2LS4wNC0uNTktLjA3LTEuMTgtLjA3LTEuNzdzLjAyLTEuMTkuMDctMS44MmMuOTItMTMuNzgsMTIuNDktMjQuNTgsMjYuMzItMjQuNTgsNi40MywwLDEyLjYzLDIuMzQsMTcuNDUsNi41OWwyLjg0LDIuNSwzLjIyLTEuODZ2MzYuMDNaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzU4LjQzLDcuMjh2NjEuMjdoLTYxLjQzVjcuMjhoLTE4LjEydjEzLjMzYy04LjE2LTcuNjgtMTguOTItMTIuNjUtMzAuODQtMTMuNGgtNi4zOGMtMTAuNzUuNjctMjAuNTUsNC43OC0yOC4zOCwxMS4yMi0xMS4wNiw5LjExLTE4LjEyLDIyLjkxLTE4LjEyLDM4LjM2LDAsMy44OS40NSw3LjY3LDEuMywxMS4zbC0yNC4xOS00MS44OS05LjA3LTE1LjctOS4wNywxNS43LTI0LjQyLDQyLjI4LTEwLjQ1LDE4LjExLTMuMjEsNS41N1Y3LjExaC0xOC4xMmwtMzcuMjcsNjQuNTVMMjMuMzksNy4xMUg1LjI2djk5LjM3aDE4LjEyVjM4LjQ5bDI4LjIyLDQ4Ljg4LDkuMDcsMTUuNyw5LjA3LTE1LjcsMjguMjItNDguOXY2OGgyNy45OGwxMS40Ny0xOS44OGg1MS42bDExLjQ3LDE5Ljg4aDE4LjEzbC03Ljg4LTEzLjY2Yy44NC44LDEuNjYsMS42MSwyLjU2LDIuMzUsOC42LDcuMDgsMTkuNTksMTEuMzEsMzEuNTcsMTEuMzEsMTMuMTgsMCwyNS4xMy01LjE2LDM0LjAyLTEzLjUzdjEzLjUzaDE4LjEydi0xOS44MWg2MS40M3YxOS44MWgxOC4xNVY3LjI4aC0xOC4xNVpNMTQ3Ljg2LDY4LjQ5bDE1LjM1LTI2LjU3LDE1LjM1LDI2LjU3aC0zMC43Wk0yNjUuODMsODAuNThjLTUuNTgsNC45NS0xMi45Myw3Ljk1LTIwLjk3LDcuOTUtMTYuNzYsMC0zMC40Ny0xMy4wMi0zMS41Ny0yOS40OS0uMDUtLjcxLS4wOC0xLjQ0LS4wOC0yLjE3cy4wMy0xLjQ1LjA4LTIuMTdjMS4xLTE2LjQ4LDE0LjgxLTI5LjQ5LDMxLjU3LTI5LjQ5LDguMDMsMCwxNS4zNSwyLjk5LDIwLjkzLDcuOTFsMTMuMDktNy41NnY2Mi41NGwtMTMuMDUtNy41NFoiLz48L2c+PC9zdmc+" alt="MACH Alliance"></a>
+  <span class="nav-brand-sep" aria-hidden="true"></span>
   <span class="nav-logo" onclick="showLanding()" title="Home">Product Catalog Generator</span>
   <select class="nav-site-select" id="currentSiteSelect" onchange="setCurrentSite(this.value)" title="Catalog you're currently working on — sets where new items are added and which categories export offers"></select>
   <div class="nav-tabs">
@@ -537,7 +549,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   <!-- Demo view -->
   <div id="demoView">
     <section class="hero" id="landingHero">
-      <div class="hero-nav"><span class="hero-logo">Product Catalog Generator</span></div>
+      <div class="hero-nav"><img class="hero-brand" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODcuMSAxNzYuMiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmZmZmY7fS5jbHMtMntmaWxsOiNmZmNiMWI7fTwvc3R5bGU+PC9kZWZzPjxnIGlkPSJMYXllcl8xLTIiPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMwLjk4LDE3MC4xMWgtMTQuOTFsLTIuNTYsNS4ySDUuMTlsMTQuMDYtMjcuMThoOC42NmwxNC4wNiwyNy4xOGgtOC40M2wtMi41Ni01LjJaTTI4LjIyLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODguMjUsMTY4Ljk0djYuMzdoLTI2LjIxdi0yNy4xOGg3LjkydjIwLjgxaDE4LjI5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEzNC45OCwxNjguOTR2Ni4zN2gtMjYuMjF2LTI3LjE4aDcuOTJ2MjAuODFoMTguMjlaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTU1LjUsMTc1LjMxdi0yNy4xOGg3LjkydjI3LjE4aC03LjkyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTIwOS4yNiwxNzAuMTFoLTE0LjkxbC0yLjU2LDUuMmgtOC4zMWwxNC4wNi0yNy4xOGg4LjY2bDE0LjA2LDI3LjE4aC04LjQzbC0yLjU2LTUuMlpNMjA2LjUxLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjcyLjQ3LDE0OC4xM3YyNy4xOGgtNi45NWwtMTcuNTUtMTcuODZ2MTcuODZoLTcuNjV2LTI3LjE4aDguMzlsMTYuMTEsMTYuNjJ2LTE2LjYyaDcuNjVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzE5LjkzLDE2NS42bDYuOCwzLjVjLTIuNTMsNC04LDcuMTEtMTUuMzQsNy4xMS0xMC4yNSwwLTE3LjE2LTUuMzItMTcuMTYtMTQuNDhzNi45MS0xNC40OCwxNy40Ny0xNC40OGM3LjAzLDAsMTIuNDcsMy4xOCwxNC45MSw3LjA3bC02LjgzLDMuNDljLTEuNzktMi43OS00LjU0LTQuMTEtOC4xOS00LjExLTUuNTksMC05LjMyLDIuODMtOS4zMiw4LjA0czMuNzMsOC4wNCw5LjMyLDguMDRjMy42NSwwLDYuNDUtMS4yNCw4LjM1LTQuMTZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzc2LjU4LDE2OS4yNXY2LjA2aC0yOXYtMjcuMThoMjguNTh2Ni4wNmgtMjAuNzd2NC40NmgxNy4xMnY1Ljc5aC0xNy4xMnY0LjgxaDIxLjJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzg3LjEsNy4yOGwtNS4yNi01LjI2aDBzMCwwLDAsMGgtMjguNjZ2NjEuMjdoLTQ1LjY1VjcuMjhsLTUuMjYtNS4yNmgtMjguNjR2Ny45NWMtNy41OS00LjY3LTE2LjI5LTcuNDQtMjUuNTgtOC4wMWgtNi43MWMtMTEuNTYuNzMtMjIuNDIsNS4wMy0zMS40LDEyLjQyLTkuNTUsNy44Ni0xNi4wNSwxOC41My0xOC43LDMwLjMzbC0yMi43OC0zOS40NS01LjI2LTUuMjYtMzYuNjMsNjMuNDNWNy4xMWwtNS4yNi01LjI2aC0yNi40MWwtMzMuMTMsNTcuMzdMMzEuNjksNy4xMWgwcy01LjI2LTUuMjYtNS4yNi01LjI2aDBzMCwwLDAsMEgwdjEwOS44OWw1LjI2LDUuMjZoMjguNjR2LTQ5Ljc3bDI2Ljc3LDQ2LjM2LDUuMjYsNS4yNywyNi43Ny00Ni4zN3YzOS4yNmw1LjI2LDUuMjZoMzYuMjdsMTEuNDgtMTkuODhoNDMuM2w4LjQ0LDE0LjYyLDUuMjYsNS4yNmgzMC4yOGwtMi0zLjQ3YzYuMDksMi4yNiwxMi41NywzLjQ3LDE5LjE0LDMuNDcsOC4yMiwwLDE2LjIyLTEuODksMjMuNTEtNS4zNHYuMDloMGw1LjI2LDUuMjZoMHMyOC42NCwwLDI4LjY0LDB2LTE5LjgxaDQ1LjY1djE0LjU1bDUuMjYsNS4yNmgyOC42NlY3LjI4aDBaTTE2NS4yNyw2My4yM2wyLjA5LTMuNjEsMi4wOSwzLjYxaC00LjE3Wk0yNzMuNjIsNzkuMDFsLTguNDUtNC44OC0yLjg0LDIuNTJjLTQuODIsNC4yNy0xMS4wMyw2LjYzLTE3LjQ4LDYuNjMtNi4wMywwLTExLjU3LTIuMTQtMTYuMDQtNS42LTIuODYtMy45LTQuNjgtOC42Mi01LjAyLTEzLjc2LS4wNC0uNTktLjA3LTEuMTgtLjA3LTEuNzdzLjAyLTEuMTkuMDctMS44MmMuOTItMTMuNzgsMTIuNDktMjQuNTgsMjYuMzItMjQuNTgsNi40MywwLDEyLjYzLDIuMzQsMTcuNDUsNi41OWwyLjg0LDIuNSwzLjIyLTEuODZ2MzYuMDNaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzU4LjQzLDcuMjh2NjEuMjdoLTYxLjQzVjcuMjhoLTE4LjEydjEzLjMzYy04LjE2LTcuNjgtMTguOTItMTIuNjUtMzAuODQtMTMuNGgtNi4zOGMtMTAuNzUuNjctMjAuNTUsNC43OC0yOC4zOCwxMS4yMi0xMS4wNiw5LjExLTE4LjEyLDIyLjkxLTE4LjEyLDM4LjM2LDAsMy44OS40NSw3LjY3LDEuMywxMS4zbC0yNC4xOS00MS44OS05LjA3LTE1LjctOS4wNywxNS43LTI0LjQyLDQyLjI4LTEwLjQ1LDE4LjExLTMuMjEsNS41N1Y3LjExaC0xOC4xMmwtMzcuMjcsNjQuNTVMMjMuMzksNy4xMUg1LjI2djk5LjM3aDE4LjEyVjM4LjQ5bDI4LjIyLDQ4Ljg4LDkuMDcsMTUuNyw5LjA3LTE1LjcsMjguMjItNDguOXY2OGgyNy45OGwxMS40Ny0xOS44OGg1MS42bDExLjQ3LDE5Ljg4aDE4LjEzbC03Ljg4LTEzLjY2Yy44NC44LDEuNjYsMS42MSwyLjU2LDIuMzUsOC42LDcuMDgsMTkuNTksMTEuMzEsMzEuNTcsMTEuMzEsMTMuMTgsMCwyNS4xMy01LjE2LDM0LjAyLTEzLjUzdjEzLjUzaDE4LjEydi0xOS44MWg2MS40M3YxOS44MWgxOC4xNVY3LjI4aC0xOC4xNVpNMTQ3Ljg2LDY4LjQ5bDE1LjM1LTI2LjU3LDE1LjM1LDI2LjU3aC0zMC43Wk0yNjUuODMsODAuNThjLTUuNTgsNC45NS0xMi45Myw3Ljk1LTIwLjk3LDcuOTUtMTYuNzYsMC0zMC40Ny0xMy4wMi0zMS41Ny0yOS40OS0uMDUtLjcxLS4wOC0xLjQ0LS4wOC0yLjE3cy4wMy0xLjQ1LjA4LTIuMTdjMS4xLTE2LjQ4LDE0LjgxLTI5LjQ5LDMxLjU3LTI5LjQ5LDguMDMsMCwxNS4zNSwyLjk5LDIwLjkzLDcuOTFsMTMuMDktNy41NnY2Mi41NGwtMTMuMDUtNy41NFoiLz48L2c+PC9zdmc+" alt="MACH Alliance"><span class="hero-brand-sep" aria-hidden="true"></span><span class="hero-logo">Product Catalog Generator</span></div>
       <div class="hero-body">
         <div class="hero-headline" id="landingHeroHeadline">Loading…</div>
         <div class="hero-sub" id="landingHeroSub"></div>
