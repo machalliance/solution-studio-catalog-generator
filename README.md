@@ -4,6 +4,8 @@ A local tool for spinning up realistic demo product catalogs — AI-generated pr
 
 It's built for people building demos and integrations, not for running a real storefront. There's no checkout, no real inventory, no customer accounts — just a fast way to get believable product data, with images, into whatever shape a downstream system needs to see.
 
+> **This is a prototype, not production software.** The local UI's own API is unauthenticated, all data is flat files on disk, and there are no spend controls on billed model calls. Run it on your own machine — in Docker, a devcontainer, or another disposable sandbox — and never on a public host or a shared network.
+
 ---
 
 ## What it does
@@ -25,26 +27,9 @@ It's built for people building demos and integrations, not for running a real st
 
 ---
 
-## Quick start
+## Getting started
 
-**Docker (recommended):**
-```bash
-docker-compose up --build
-# → http://localhost:3004/products
-```
-
-**Local dev (hot-reload, no Docker):**
-```bash
-npm install
-npm run dev
-# tsx watch src/server.ts → http://localhost:3004/products
-```
-
-Either way you'll need credentials in `.env`. Out of the box the app talks to Anthropic and OpenAI directly, so that means an `ANTHROPIC_API_KEY` (product copy, prompts) and an `OPENAI_API_KEY` (image generation) — but you can point it at Vercel AI Gateway, OpenRouter, or any OpenAI-compatible proxy instead and set that service's key alone. See **Models and providers** and **Environment variables** below.
-
-> **A fresh clone starts with an empty catalog.** `docker-compose.yml` bind-mounts `./data/catalog` and `./data/images` from this checkout, which don't exist until the first run — the app comes up fine, there's just nothing in it yet. Add your first catalog and category from Settings, or point `CATALOG_PATH`/`IMAGES_PATH` at product data you already have.
-
-> Editing `src/products/api.ts` or `ui.html` takes effect immediately under Docker (bind-mounted, `tsx watch`). Editing JSON under `data/exports/` or `data/catalog/` also takes effect on the next request — nothing is cached. The one thing that needs a full `docker compose up --build` is adding a new npm dependency to `package.json`.
+See **[Getting started](GETTING_STARTED.md)** — requirements, credentials, running it safely, and creating your first catalog, products, and export.
 
 ---
 
@@ -58,16 +43,6 @@ Either way you'll need credentials in `.env`. Out of the box the app talks to An
 **Headless and API-first by construction:** the web UI (`ui.html`) and the `/catalog` REST API are separate, independent consumers of the same catalog data — the UI has no access the API doesn't also expose. Keeping that true is what lets another service use this catalog as a backend without depending on this project's own frontend.
 
 For the full architectural detail — how sites/categories are scoped, the fixture-naming/collision rules, the export engine's field-transform semantics, the auth model, known gotchas — read the code comments in `src/products/api.ts`, which are kept dense and up to date with every change; this README is the higher-level tour.
-
----
-
-## Using it
-
-1. **Pick or create a catalog** (Settings → Catalogs & categories, or the nav dropdown once you have more than one). A catalog is a top-level vertical — Clothing, Home, whatever you're demoing — with its own categories and its own base image prompt.
-2. **Add products** — single item, or describe a batch in plain language and let Claude generate the set (name, brand, tags, price, category) before you generate images for them.
-3. **Generate images** from the product's detail panel — regenerate anytime, or edit one in place with a short note ("Tweak") instead of starting over.
-4. **Build an export map** (Exports tab) — either start from a hand-verified template (BigCommerce via Algolia, Coveo for Commerce) or describe your target and let Claude draft a field map from a schema you paste in or link to. Preview it against a real product before running it.
-5. **Run or download** — JSON only, or a zip bundling the JSON with every referenced product image, laid out so the whole thing is self-consistent if moved as a unit.
 
 ---
 
@@ -188,3 +163,13 @@ data/
   exports/      # saved export map definitions, one file per map
   backups/      # tar.gz snapshots of catalog + images
 ```
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the tests and what the project expects from a change.
+
+## License
+
+[MIT](LICENSE) — copyright MACH Alliance.
