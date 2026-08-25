@@ -243,6 +243,29 @@ describe('applyExportMap', () => {
     expect(out).toEqual([{}])
     expect(({} as any).polluted).toBeUndefined()
   })
+
+  // The prefix[].subkey branch never reaches setNestedValue, so it needs the same guard:
+  // out['__proto__'] = [...] hits Object.prototype's setter and replaces the record's
+  // prototype rather than writing a field.
+  it('ignores a prototype-polluting array-group prefix or subkey', () => {
+    for (const target of ['__proto__[].text', 'constructor[].text', 'custom[].__proto__']) {
+      const out = applyExportMap(
+        { fields: [field({ source: 'name', target })] } as any,
+        [raw],
+      )
+      expect(out, target).toEqual([{}])
+      expect(Object.getPrototypeOf(out[0]), target).toBe(Object.prototype)
+    }
+  })
+
+  // A legitimate array group still works — the guard checks the prefix, not the pattern.
+  it('still emits an ordinary array group', () => {
+    const out = applyExportMap(
+      { fields: [field({ source: 'name', target: 'custom_fields[].text' })] } as any,
+      [raw],
+    )
+    expect(out).toEqual([{ custom_fields: [{ name: 'name', text: raw.name }] }])
+  })
 })
 
 describe('extractPaths', () => {

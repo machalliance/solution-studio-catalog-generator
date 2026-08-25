@@ -44,10 +44,17 @@ lerna-debug.log*
 *.p12
 *.pfx
 
-# Runtime data
-data/catalog/
-data/images/
-data/backups/
+# Runtime data. The directories themselves are tracked (via .gitkeep) even though their
+# contents aren't: docker-compose.yml bind-mounts all four, and Docker creates a missing
+# bind-mount source as root-owned — which the runtime image, running as the non-root
+# `node` user, then can't write to. Keeping them in the checkout means a fresh clone
+# mounts host-owned directories that are writable from inside the container.
+data/catalog/*
+!data/catalog/.gitkeep
+data/images/*
+!data/images/.gitkeep
+data/backups/*
+!data/backups/.gitkeep
 data/exports/*.json
 pids/
 *.pid

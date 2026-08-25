@@ -10,7 +10,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 // mirrors the same variable in products/api.ts. Unset in normal operation.
 const ROOT      = process.env.APP_ROOT || join(__dirname, '../')
 const DATA_DIR  = join(ROOT, 'data')
-const IMAGES    = join(DATA_DIR, 'images')
+// Reads IMAGES_PATH the same way products/api.ts does. The two have to agree: api.ts
+// writes generated images (and the manifest) to IMAGES_PATH, and this is what serves
+// them back, so honoring the override in only one of the two 404s every thumbnail.
+const IMAGES    = process.env.IMAGES_PATH || join(DATA_DIR, 'images')
 const UI_HTML   = join(__dirname, 'products/ui.html')
 
 // Ensure backups/exports dirs exist (catalog and images are volume-mounted)
@@ -94,9 +97,15 @@ app.use('/api/*', async (c, next) => {
 })
 app.route('/api', imageGenRoutes)
 
-// Catalog REST API — gated by bearer token for remote consumers
+// Catalog REST API — gated by bearer token for remote consumers, and by the same
+// same-origin check as /api/*. Both, because they answer different questions and the
+// token is optional: with STUDIO_API_TOKEN unset requireAuth waves everything through,
+// and /catalog/* mounts the same mutating handlers /api/* does (generate, delete image),
+// so without the origin check a page the user has open could drive them cross-origin as
+// a no-preflight "simple" request. It costs legitimate consumers nothing — a non-browser
+// caller sends no Origin, and a missing Origin is allowed by design.
 app.use('/catalog/*', async (c, next) => {
-  const err = requireAuth(c.req.raw)
+  const err = requireSameOrigin(c) ?? requireAuth(c.req.raw)
   if (err) return err
   await next()
 })

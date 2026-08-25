@@ -338,4 +338,24 @@ describe('/catalog with no STUDIO_API_TOKEN configured', () => {
     expect((await app.request('/catalog')).status).toBe(200)
     expect((await app.request('/catalog', { headers: { Authorization: 'Bearer anything' } })).status).toBe(200)
   })
+
+  // The token is optional, so it can't be the only thing guarding the mutating routes
+  // /catalog shares with /api. Without the same-origin check, a page the user happens to
+  // have open could POST /catalog/:id/generate as a no-preflight "simple" request and
+  // spend the operator's provider credit overwriting product images. Mirrors the /api
+  // case in auth.test.ts.
+  it('still applies the same-origin check to the mutating routes', async () => {
+    const evil = { Origin: 'https://evil.example' }
+    for (const [method, path] of [['POST', '/catalog/tile-001/generate'], ['DELETE', '/catalog/tile-001/image']]) {
+      const res = await app.request(path, noBody(method, { headers: evil }))
+      expect(res.status, `${method} ${path}`).toBe(403)
+      expect(await res.json() as any).toEqual({ error: 'Cross-origin request rejected' })
+    }
+  })
+
+  it('leaves reads and Origin-less callers alone', async () => {
+    // GET is never a CSRF write, and a non-browser consumer sends no Origin at all.
+    expect((await app.request('/catalog', { headers: { Origin: 'https://evil.example' } })).status).toBe(200)
+    expect((await app.request('/catalog/tile-001/image', { method: 'DELETE' })).status).not.toBe(403)
+  })
 })

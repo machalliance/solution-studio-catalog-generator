@@ -1458,6 +1458,10 @@ function applyExportMap(map: Pick<ExportMap, 'fields' | 'siteBaseUrl' | 'imageEx
       if (arrayMatch) {
         const prefix = arrayMatch[1]
         const subkey = arrayMatch[2]
+        // Same reasoning as setNestedValue's UNSAFE_PATH_KEYS guard, which this branch
+        // never reaches: a target of "__proto__[].text" would land on out[prefix] below
+        // and hit Object.prototype's __proto__ setter instead of writing a field. Drop it.
+        if (UNSAFE_PATH_KEYS.has(prefix) || UNSAFE_PATH_KEYS.has(subkey)) continue
         if (!arrayGroups[prefix]) arrayGroups[prefix] = []
         arrayGroups[prefix].push({ source: field.source, subkey, val: computed })
       } else {

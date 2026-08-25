@@ -1208,7 +1208,7 @@ function renderDetail() {
       <div class="prompt-section">
         <div class="prompt-label">
           <span>Item Details</span>
-          <span class="save-msg" id="metaSaveMsg">Saved</span>
+          <span class="save-msg" id="metaSaveMsg" role="status"></span>
         </div>
         <div style="font-family:monospace;font-size:11px;color:var(--muted);margin-top:-4px">${escHtml(item.objectID)}</div>
         <div class="form-row">
@@ -1261,7 +1261,7 @@ function renderDetail() {
       <div class="prompt-section">
         <div class="prompt-label">
           <span>Tags</span>
-          <span class="save-msg" id="tagsSaveMsg">Saved</span>
+          <span class="save-msg" id="tagsSaveMsg" role="status"></span>
         </div>
         <input type="text" id="tagsInput" value="${escHtml((item.tags||[]).join(', '))}"
           style="font-family:var(--font);font-size:12px;color:var(--ink);border:1px solid var(--hairline);border-radius:var(--radius);padding:7px 10px;outline:none;background:var(--stone);transition:border-color 0.15s;width:100%"
