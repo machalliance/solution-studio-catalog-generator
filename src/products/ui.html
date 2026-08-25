@@ -51,6 +51,10 @@ nav {
   text-decoration: none; transition: top 0.15s;
 }
 .skip-link:focus { top: 8px; outline: 2px solid var(--ink); outline-offset: 2px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 [tabindex="-1"]:focus { outline: none; }
 .nav-tabs { display: flex; align-items: stretch; flex: 1; }
 .tab-btn {
@@ -486,7 +490,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 .creator-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:16px; }
 .creator-card { border:1px solid var(--hairline); border-radius:var(--radius); background:var(--white); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow 0.15s; }
 .creator-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.creator-card-thumb { width:100%; aspect-ratio:1; background:var(--stone); display:flex; align-items:center; justify-content:center; font-size:56px; color:#ddd; position:relative; overflow:hidden; }
+.creator-card-thumb { width:100%; aspect-ratio:1; background:var(--stone); display:flex; align-items:center; justify-content:center; font-size:56px; color:var(--muted); position:relative; overflow:hidden; }
 .creator-card-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .creator-card-thumb .spin { position:absolute; }
 .creator-card-header { display:flex; align-items:center; gap:6px; padding:8px 12px 0; }
@@ -1069,7 +1073,7 @@ function itemCard(item) {
       onclick="event.stopPropagation();toggleSelect('${item.objectID}',this)"
       aria-label="Select ${escHtml(item.name)} for deletion">
     <div class="item-thumb">
-      ${imgSrc ? `<img src="${imgSrc}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+      ${imgSrc ? `<img src="${imgSrc}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
       <div class="placeholder" ${imgSrc ? 'style="display:none"' : ''}>
         <span class="ph-icon">📷</span>
         <span class="ph-label">No image</span>
@@ -1199,7 +1203,7 @@ function renderDetail() {
       <div class="placeholder" id="detailPlaceholder" ${imgSrc ? 'style="display:none"' : ''}>☐</div>
       <div class="spinner" id="detailSpin"><div class="spin"></div></div>
     </div>
-    <div class="tweak-compare" id="tweakCompare" style="display:none"></div>
+    <div class="tweak-compare" id="tweakCompare" role="region" aria-label="Compare tweaked image" style="display:none"></div>
     <div class="detail-body">
       <div class="prompt-section">
         <div class="prompt-label">
@@ -1510,11 +1514,11 @@ function showTweakCompare(objectID, originalUrl, tweakUrl) {
     <div class="tweak-compare-row">
       <div class="tweak-compare-col">
         <div class="tweak-compare-label">Original</div>
-        <img src="${originalUrl}">
+        <img src="${originalUrl}" alt="">
       </div>
       <div class="tweak-compare-col">
         <div class="tweak-compare-label">Tweaked</div>
-        <img src="${tweakUrl}">
+        <img src="${tweakUrl}" alt="">
       </div>
     </div>
     <div class="tweak-compare-actions">
@@ -1523,6 +1527,7 @@ function showTweakCompare(objectID, originalUrl, tweakUrl) {
     </div>
   `
   el.style.display = ''
+  _focusView('tweakCompare')
 }
 
 async function resolveTweak(objectID, accept) {
@@ -1724,6 +1729,11 @@ function toast(message, type = 'error') {
   if (!stack) return
   const el = document.createElement('div')
   el.className = `toast${type === 'success' ? ' toast-success' : ''}`
+  // Toasts are how every error in this app reaches the user, and a plain div appended to
+  // the DOM is silent to a screen reader. The role goes on the toast itself rather than the
+  // stack so errors interrupt and confirmations wait their turn — a live region on the
+  // container would flatten both to the same priority.
+  el.setAttribute('role', type === 'success' ? 'status' : 'alert')
   el.textContent = message
   const dismiss = () => { el.classList.add('toast-out'); setTimeout(() => el.remove(), 150) }
   el.onclick = dismiss
@@ -1790,8 +1800,8 @@ function _renderCreator(mode) {
 
 function _batchInputHtml() {
   return `<div class="creator-input-area">
-    <h3>Describe what to create</h3>
-    <textarea id="creatorPrompt" rows="3" placeholder="e.g. 5 skinny chino pants from Gap in navy, olive, stone, camel, and slate — men's, $85"></textarea>
+    <h3 id="creatorPromptLabel">Describe what to create</h3>
+    <textarea id="creatorPrompt" rows="3" aria-labelledby="creatorPromptLabel" placeholder="e.g. 5 skinny chino pants from Gap in navy, olive, stone, camel, and slate — men's, $85"></textarea>
     <div style="margin-top:8px">
       <div class="form-row">
         <label for="creatorStyleHint">Style hint <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional — AI infers styles from description, this guides it)</span></label>
@@ -1890,10 +1900,13 @@ function _refreshCard(id) {
 }
 
 function _statusChip(status, errMsg) {
-  if (!status || status === 'pending') return '<span class="chip chip-pending">···</span>'
-  if (status === 'running') return '<span class="chip chip-running">…</span>'
-  if (status === 'done')    return '<span class="chip chip-ok">✓</span>'
-  if (status === 'error')   return `<span class="chip chip-error" title="${escHtml(errMsg || 'Failed')} — click ✨ to retry">!</span>`
+  const chip = (cls, glyph, label, title = '') =>
+    `<span class="chip ${cls}"${title}><span aria-hidden="true">${glyph}</span><span class="sr-only">${label}</span></span>`
+  if (!status || status === 'pending') return chip('chip-pending', '···', 'not started')
+  if (status === 'running') return chip('chip-running', '…', 'generating')
+  if (status === 'done')    return chip('chip-ok', '✓', 'done')
+  if (status === 'error')   return chip('chip-error', '!',
+    `failed: ${escHtml(errMsg || 'Failed')}`, ` title="${escHtml(errMsg || 'Failed')} — click the generate button to retry"`)
   return ''
 }
 
@@ -2237,8 +2250,10 @@ function backupRow(b) {
       <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtSize(b.size)} &nbsp;·&nbsp; ${escHtml(b.filename)}</div>
     </div>
     <div style="display:flex;gap:6px">
-      <button class="btn btn-ghost" onclick="restoreBackup('${escHtml(b.filename)}')">↺ Restore</button>
-      <button class="btn btn-danger" onclick="deleteBackup('${escHtml(b.filename)}')">Delete</button>
+      <button class="btn btn-ghost" onclick="restoreBackup('${escHtml(b.filename)}')"
+        aria-label="Restore snapshot from ${escHtml(fmtDate(b.created))}"><span aria-hidden="true">↺</span> Restore</button>
+      <button class="btn btn-danger" onclick="deleteBackup('${escHtml(b.filename)}')"
+        aria-label="Delete snapshot from ${escHtml(fmtDate(b.created))}">Delete</button>
     </div>
   </div>`
 }
@@ -2249,6 +2264,9 @@ async function createSnapshot() {
   try {
     await apiCall('/api/backups', { method: 'POST' })
     await loadBackups()
+    // Success was silent: the button label flicked back and a row appeared in a list the
+    // user may not be looking at. Nothing announced that the snapshot actually happened.
+    toast('Snapshot created', 'success')
   } catch (err) {
     toast('Error creating snapshot: ' + err.message)
   } finally {
@@ -2438,6 +2456,7 @@ async function selectMap(id) {
   if (!currentMap) { renderSchemaPanel(); return }
   renderMapEditor(currentMap)
   await resolveMapSchema(id)
+  _focusView('exportEditorArea')
 }
 
 // Builds the "site-url"/"image-url" transform's preview value, mirroring resolveFileUrl()
@@ -2470,20 +2489,20 @@ function previewTransform(source, transform) {
   if (transform === 'site-url' || transform === 'image-url') {
     const base = transform === 'site-url' ? currentMap?.siteBaseUrl : currentMap?.imageExportBase
     const val = _resolveFileUrlPreview(base)
-    if (val === null) return '<span style="color:#ccc">—</span>'
+    if (val === null) return '<span style="color:var(--muted)">—</span>'
     const truncated = val.length > 52 ? val.slice(0, 52) + '…' : val
     return `<span title="${escHtml(val)}">${escHtml(truncated)}</span>`
   }
   const literalSrc = _literalSourceValue(source)
   const raw = literalSrc !== undefined ? literalSrc : source.split('.').reduce((o, k) => o?.[k], exportSample)
-  if (raw === undefined || raw === null) return '<span style="color:#ccc">—</span>'
+  if (raw === undefined || raw === null) return '<span style="color:var(--muted)">—</span>'
   let val
   switch (transform) {
     case 'first':     val = Array.isArray(raw) ? raw[0] : raw; break
     case 'join':      val = Array.isArray(raw) ? raw.join(', ') : raw; break
     default:          val = raw
   }
-  if (val === null || val === undefined) return '<span style="color:#ccc">—</span>'
+  if (val === null || val === undefined) return '<span style="color:var(--muted)">—</span>'
   const str = typeof val === 'object' ? JSON.stringify(val) : String(val ?? '')
   const truncated = str.length > 52 ? str.slice(0, 52) + '…' : str
   return `<span title="${escHtml(str)}">${escHtml(truncated)}</span>`
@@ -2526,13 +2545,13 @@ function renderMapEditor(map) {
   const activeCount = map.fields.filter(f => f.include).length
   const sampleOpts = exportItems.map(it => `<option value="${escHtml(it.objectID)}" ${it.objectID === exportSample?.objectID ? 'selected' : ''}>${escHtml(it.objectID)}${it.name ? ' — ' + escHtml(it.name) : ''}</option>`).join('')
   const sampleLabel = exportItems.length ? `<span style="font-size:10px;color:var(--muted);font-weight:400;font-style:italic"> — previewing:
-    <select onchange="changePreviewSample(this.value)" style="font-size:10px;color:var(--muted);font-weight:400;font-style:italic;border:none;background:none;font-family:var(--font);outline:none;cursor:pointer;max-width:260px">${sampleOpts}</select></span>` : ''
+    <select onchange="changePreviewSample(this.value)" aria-label="Preview sample product" style="font-size:10px;color:var(--muted);font-weight:400;font-style:italic;border:none;background:none;font-family:var(--font);outline:none;cursor:pointer;max-width:260px">${sampleOpts}</select></span>` : ''
   area.innerHTML = `
     <div style="max-width:960px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:16px">
         <div>
-          <input id="emName" value="${escHtml(map.name)}" style="font-size:18px;font-weight:600;letter-spacing:-0.02em;border:none;background:none;font-family:var(--font);color:var(--ink);outline:none;width:340px;padding:0" placeholder="Map name">
-          <input id="emDesc" value="${escHtml(map.description)}" style="display:block;margin-top:4px;font-size:12px;border:none;background:none;font-family:var(--font);color:var(--muted);outline:none;width:520px;padding:0" placeholder="e.g. Algolia product search with BigCommerce v2 integration">
+          <input id="emName" aria-label="Map name" value="${escHtml(map.name)}" style="font-size:18px;font-weight:600;letter-spacing:-0.02em;border:none;background:none;font-family:var(--font);color:var(--ink);outline:none;width:340px;padding:0" placeholder="Map name">
+          <input id="emDesc" aria-label="Map description" value="${escHtml(map.description)}" style="display:block;margin-top:4px;font-size:12px;border:none;background:none;font-family:var(--font);color:var(--muted);outline:none;width:520px;padding:0" placeholder="e.g. Algolia product search with BigCommerce v2 integration">
           <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
             <label for="emSiteBaseUrl" style="font-size:10px;color:var(--muted);white-space:nowrap">Site base URL</label>
             <input id="emSiteBaseUrl" value="${escHtml(map.siteBaseUrl || '')}" placeholder="https://mystorefront.example.com — this map's destination, for the site-url transform" onchange="updateSiteBaseUrl()" style="font-size:11px;font-family:monospace;border:none;border-bottom:1px solid var(--hairline);background:none;color:var(--ink);outline:none;width:420px;padding:0 0 1px">
@@ -2558,8 +2577,10 @@ function renderMapEditor(map) {
             Export categories <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">— from "${escHtml(sites.find(s=>s.id===currentSiteId)?.label || '')}"</span>
           </div>
           <span style="font-size:10.5px">
-            <a href="#" onclick="event.preventDefault();_setExportCatFilter(true)" style="color:var(--muted)">All</a> ·
-            <a href="#" onclick="event.preventDefault();_setExportCatFilter(false)" style="color:var(--muted)">None</a>
+            <button type="button" onclick="_setExportCatFilter(true)" aria-label="Select all export categories"
+              style="background:none;border:none;padding:0;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline">All</button> ·
+            <button type="button" onclick="_setExportCatFilter(false)" aria-label="Clear all export categories"
+              style="background:none;border:none;padding:0;font:inherit;color:var(--muted);cursor:pointer;text-decoration:underline">None</button>
           </span>
         </div>
         <div id="exportCatFilter" role="group" aria-labelledby="exportCatFilterLabel" style="display:flex;flex-wrap:wrap;gap:2px 14px"></div>
@@ -2899,7 +2920,7 @@ function fieldRow(f, i) {
   const rawTrunc = rawStr.length > 48 ? rawStr.slice(0, 48) + '…' : rawStr
 
   // target side: transformed value preview — nothing to preview if there's no target to write to
-  const preview = f.target ? previewTransform(f.source, f.transform) : '<span style="color:#ddd">unassigned</span>'
+  const preview = f.target ? previewTransform(f.source, f.transform) : '<span style="color:var(--muted)">unassigned</span>'
 
   const isFocused = focusedRow === i
   const rowBg    = excluded ? '#fafafa' : isFocused ? 'var(--stone)' : 'var(--white)'
@@ -2924,11 +2945,13 @@ function fieldRow(f, i) {
       onblur="commitRename(${i})">`
     toControl = `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
       <select id="tsel-${i}" onchange="onTargetSelect(${i},this.value)"
-        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'#bbb'};outline:none;flex:1;padding:0 0 1px;cursor:pointer"
+        aria-label="Target field for ${escHtml(f.source || 'row ' + (i + 1))}"
+        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'var(--muted)'};outline:none;flex:1;padding:0 0 1px;cursor:pointer"
         ${excluded?'disabled':''}>${targetOpts}</select>
       ${renameInput}
       ${excluded ? '' : `<button onclick="startRename(${i})" title="Rename target field name"
-        style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#ccc;font-size:11px;padding:0 2px;line-height:1" id="rename-btn-${i}">✏</button>`}
+        aria-label="Rename target field for ${escHtml(f.source || 'this row')}"
+        style="flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:0 2px;line-height:1" id="rename-btn-${i}"><span aria-hidden="true">✏</span></button>`}
     </div>`
   } else {
     // free-text with datalist — avoids the disappearing-option problem when no schema is set
@@ -2936,7 +2959,8 @@ function fieldRow(f, i) {
     const dlId = `tdl-${i}`
     toControl = `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
       <input id="tsel-${i}" list="${dlId}" value="${escHtml(f.target)}" placeholder="target field name"
-        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'#bbb'};outline:none;flex:1;padding:0 0 1px"
+        aria-label="Target field for ${escHtml(f.source || 'row ' + (i + 1))}"
+        style="font-family:monospace;font-size:11px;font-weight:600;border:none;border-bottom:1px solid ${excluded?'transparent':'var(--hairline)'};background:none;color:${f.target?mutedCol:'var(--muted)'};outline:none;flex:1;padding:0 0 1px"
         onchange="onTargetSelect(${i},this.value.trim())"
         ${excluded?'disabled':''}>
       <datalist id="${dlId}">${knownTargets.map(t=>`<option value="${escHtml(t)}">`).join('')}</datalist>
@@ -2949,7 +2973,7 @@ function fieldRow(f, i) {
     <!-- FROM -->
     <div style="padding:10px 12px;${dimText}">
       <div style="font-family:monospace;font-size:11px;font-weight:600;color:${mutedCol};margin-bottom:3px">${escHtml(f.source)}</div>
-      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(rawStr)}">${escHtml(rawTrunc) || '<span style="color:#ddd">no sample value</span>'}</div>
+      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(rawStr)}">${escHtml(rawTrunc) || '<span style="color:var(--muted)">no sample value</span>'}</div>
     </div>
 
     <!-- arrow -->
@@ -2958,12 +2982,13 @@ function fieldRow(f, i) {
     <!-- TO -->
     <div style="padding:10px 12px;${dimText}">
       ${toControl}
-      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${excluded ? '<span style="color:#ddd">excluded</span>' : preview}</div>
+      <div style="font-size:11px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${excluded ? '<span style="color:var(--muted)">excluded</span>' : preview}</div>
     </div>
 
     <!-- transform -->
     <div style="padding:10px 8px;display:flex;align-items:center;border-left:1px solid var(--hairline)">
       <select onchange="updateField(${i},'transform',this.value);rerenderRow(${i})"
+        aria-label="Transform for ${escHtml(f.source || 'row ' + (i + 1))}"
         style="font-family:var(--font);font-size:11px;border:1px solid var(--hairline);border-radius:3px;padding:3px 5px;background:var(--stone);outline:none;width:100%;color:${excluded?'var(--muted)':'var(--ink)'}"
         ${excluded?'disabled':''}>${opts}</select>
     </div>
@@ -2971,6 +2996,7 @@ function fieldRow(f, i) {
     <!-- include toggle -->
     <div style="display:flex;align-items:center;justify-content:center;border-left:1px solid var(--hairline)">
       <input type="checkbox" ${f.include?'checked':''} onchange="updateField(${i},'include',this.checked);rerenderRow(${i})"
+        aria-label="Include ${escHtml(f.source || 'row ' + (i + 1))} in the export"
         style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
     </div>
   </div>`
@@ -3305,7 +3331,7 @@ function _previewSchemaPanel(schema) {
     ? _renderSchemaTreeNodes(schema.tree, 0, none, null)
     : schema.fields.map(f =>
         `<div style="display:flex;align-items:center;gap:6px;padding:3px 6px">
-          <span style="font-size:10px;color:#ccc;flex-shrink:0;font-family:monospace">○</span>
+          <span style="font-size:10px;color:var(--muted);flex-shrink:0;font-family:monospace">○</span>
           <span style="font-family:monospace;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(f)}</span>
         </div>`).join('')
   panel.innerHTML = `
