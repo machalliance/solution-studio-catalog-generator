@@ -11,7 +11,7 @@ services:
   unit:
     build:
       context: .
-      dockerfile: Dockerfile.test
+      target: test
     # Source is mounted over the baked copy so an edit takes effect without a rebuild.
     # node_modules deliberately stays the image's own — sharp and the Playwright browsers
     # are platform-specific binaries and a host node_modules will not load here.
@@ -26,7 +26,7 @@ services:
   app-e2e:
     build:
       context: .
-      dockerfile: Dockerfile.test
+      target: test
     environment:
       PORT: 3004
       APP_ROOT: /app/e2e-data
@@ -55,7 +55,7 @@ services:
   e2e:
     build:
       context: .
-      dockerfile: Dockerfile.e2e
+      target: e2e
     depends_on:
       app-e2e:
         condition: service_healthy

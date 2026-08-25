@@ -1,6 +1,8 @@
 services:
   catalog-generator:
-    build: .
+    build:
+      context: .
+      target: runtime
     ports:
       # Bound to the loopback interface only. /api/* is deliberately unauthenticated
       # (it's the local UI's own backend — see requireAuth in server.ts), so a bare
@@ -10,10 +12,13 @@ services:
     env_file: .env
     security_opt:
       - no-new-privileges:true
+    # All four data directories live under ./data in this checkout. They are relative
+    # bind mounts rather than named volumes so the catalog stays readable and editable
+    # from the host, and so another local tool can be pointed at the same files.
     volumes:
       - ./src:/app/src
-      - ../greeter/catalog/fixtures:/app/data/catalog
-      - ../greeter/catalog/images:/app/data/images
+      - ./data/catalog:/app/data/catalog
+      - ./data/images:/app/data/images
       - ./data/backups:/app/data/backups
       - ./data/exports:/app/data/exports
     restart: unless-stopped

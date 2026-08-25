@@ -19,6 +19,8 @@ npx playwright test test/e2e/ui.spec.ts --headed
 docker compose up --build                                  # the app, port 127.0.0.1:3004
 npm run test:docker        # vitest inside the container image
 npm run test:e2e:docker    # playwright against a containerized app (docker-compose.test.yml)
+
+docker build --target test .   # one multi-stage Dockerfile: runtime (default), test, e2e
 ```
 
 E2E specs can be pointed at an already-running instance instead of starting one:
@@ -37,7 +39,7 @@ The code comments in `api.ts` are dense and treated as the authoritative design 
 ### Two API surfaces with different threat models
 
 - `/api/*` — the UI's own backend. Unauthenticated by design (the UI has no token to send); protected by loopback-only publishing plus a same-origin check (`requireSameOrigin` in `server.ts`) because `c.req.json()` parses any Content-Type and would otherwise be CSRF-able. Several routes are destructive or trigger billed API calls.
-- `/catalog/*` — for other services (Greeter's StudioAdapter is the real consumer). Gated by `STUDIO_API_TOKEN` bearer auth when the var is set.
+- `/catalog/*` — for other services consuming the catalog as a backend. Gated by `STUDIO_API_TOKEN` bearer auth when the var is set.
 
 The UI has no access the `/catalog` API doesn't also expose — keep it that way.
 
@@ -96,5 +98,6 @@ All outbound network calls go through global `fetch`, stubbed per-test by `insta
 
 ## Notes
 
+- One multi-stage `Dockerfile` with three targets — `runtime` (default, and what ships), `test` (Alpine, full deps; backs both the `unit` and `app-e2e` services) and `e2e` (Debian, because that's what Playwright ships browsers for). Compose selects them with `target:`. Stages are independent, so devDependencies can't reach the runtime image — don't add a `COPY --from=test` into it.
 - Editing `src/**` takes effect immediately under Docker (bind-mounted + `tsx watch`); only a new npm dependency needs `docker compose up --build`.
-- `docker-compose.yml` bind-mounts catalog data from `../greeter/catalog/`, so a standalone clone starts with an empty catalog. Point `CATALOG_PATH`/`IMAGES_PATH` elsewhere if that repo isn't checked out alongside.
+- `docker-compose.yml` bind-mounts all four data directories from `./data/`, which a fresh clone doesn't have yet — the app starts with an empty catalog. Point `CATALOG_PATH`/`IMAGES_PATH` elsewhere to use existing product data.

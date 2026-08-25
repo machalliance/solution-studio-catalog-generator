@@ -42,7 +42,7 @@ npm run dev
 
 Either way you'll need credentials in `.env`. Out of the box the app talks to Anthropic and OpenAI directly, so that means an `ANTHROPIC_API_KEY` (product copy, prompts) and an `OPENAI_API_KEY` (image generation) — but you can point it at Vercel AI Gateway, OpenRouter, or any OpenAI-compatible proxy instead and set that service's key alone. See **Models and providers** and **Environment variables** below.
 
-> **Catalog data lives outside this repo by default.** `docker-compose.yml` bind-mounts `../greeter/catalog/fixtures` and `../greeter/catalog/images` — the Greeter project owns this content, not part of this checkout — so a bare `git clone` of just this repo starts with an empty catalog (the app runs fine, there's just nothing in it yet). Either check out `greeter` alongside this repo, or point `CATALOG_PATH`/`IMAGES_PATH` at wherever you'd rather keep product data, then add your first catalog/category from Settings.
+> **A fresh clone starts with an empty catalog.** `docker-compose.yml` bind-mounts `./data/catalog` and `./data/images` from this checkout, which don't exist until the first run — the app comes up fine, there's just nothing in it yet. Add your first catalog and category from Settings, or point `CATALOG_PATH`/`IMAGES_PATH` at product data you already have.
 
 > Editing `src/products/api.ts` or `ui.html` takes effect immediately under Docker (bind-mounted, `tsx watch`). Editing JSON under `data/exports/` or `data/catalog/` also takes effect on the next request — nothing is cached. The one thing that needs a full `docker compose up --build` is adding a new npm dependency to `package.json`.
 
@@ -55,7 +55,7 @@ Either way you'll need credentials in `.env`. Out of the box the app talks to An
 - **Data:** flat JSON files under `data/catalog/` (product fixtures, Algolia `hits` shape) and `data/images/` (generated/uploaded images), both bind-mountable so they can be shared with other local tools.
 - **AI providers:** all model calls go through the [Vercel AI SDK](https://ai-sdk.dev/) from `api.ts` — never import a provider anywhere else. Text (product copy, image prompts, export-map drafting) and images are configured independently; see **Models and providers** below.
 
-**Headless and API-first by construction, not just by description:** the web UI (`ui.html`) and the `/catalog` REST API are separate, independent consumers of the same catalog data — the UI has no access the API doesn't also expose. That's proven in practice, not just in principle: Greeter, a separate project, is a second real frontend that consumes this catalog purely through `/catalog`, with no dependency on this project's own UI at all.
+**Headless and API-first by construction:** the web UI (`ui.html`) and the `/catalog` REST API are separate, independent consumers of the same catalog data — the UI has no access the API doesn't also expose. Keeping that true is what lets another service use this catalog as a backend without depending on this project's own frontend.
 
 For the full architectural detail — how sites/categories are scoped, the fixture-naming/collision rules, the export engine's field-transform semantics, the auth model, known gotchas — read the code comments in `src/products/api.ts`, which are kept dense and up to date with every change; this README is the higher-level tour.
 

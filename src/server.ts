@@ -38,7 +38,7 @@ function requireAuth(req: Request): Response | null {
 // cross-origin form/fetch with text/plain is a "simple" request that skips preflight
 // entirely and would otherwise be processed. Every state-changing call therefore has
 // to prove it came from this origin. Same-origin browser requests always send Origin
-// on writes; non-browser callers (curl, the Greeter adapter) send none at all, and a
+// on writes; non-browser callers (curl, a service adapter) send none at all, and a
 // missing header is allowed — only a header naming a *different* origin is rejected.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 

@@ -251,7 +251,7 @@ describe('GET /api/config and /api/settings', () => {
   })
 })
 
-// The catalog API is the read surface remote consumers (e.g. Greeter) use.
+// The catalog API is the read surface remote consumers use.
 describe('GET /catalog', () => {
   beforeEach(() => {
     writeFixtureFile(ws, 'algolia-pants.json', [

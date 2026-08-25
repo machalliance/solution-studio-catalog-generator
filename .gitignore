@@ -45,6 +45,7 @@ lerna-debug.log*
 *.pfx
 
 # Runtime data
+data/catalog/
 data/images/
 data/backups/
 data/exports/*.json

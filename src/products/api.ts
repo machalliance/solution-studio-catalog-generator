@@ -2080,7 +2080,7 @@ imageGenRoutes.post('/exports/:id/download', async c => {
   })
 })
 
-// ── Catalog API (for remote consumers e.g. Greeter StudioAdapter) ─────────────
+// ── Catalog API (for remote consumers — other services using this as a backend) ─
 
 export const catalogRoutes = new Hono()
 
@@ -2093,7 +2093,7 @@ catalogRoutes.get('/', c => {
   const manifest = loadManifest()
   // A bare ?category= is ambiguous once two sites genuinely share that name — an optional
   // ?site= disambiguates; omitted, it merges every site's matching category (unchanged
-  // behavior for the common, non-colliding case existing callers like Greeter rely on).
+  // behavior for the common, non-colliding case existing external callers rely on).
   let refs = getAllCatRefs()
   if (siteQ) refs = refs.filter(r => r.site === siteQ)
   if (cat)   refs = refs.filter(r => r.category === cat)
