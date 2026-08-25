@@ -168,6 +168,38 @@ test('surfaces a failed AI call as an error rather than failing silently', async
   await expect(toast(page, /not set|error/i)).toBeVisible()
 })
 
+// The Models panel is the only place the provider route is selectable, and the only UI
+// coverage of it — api.ts is unit-tested, ui.html is not importable.
+test('shows the provider routes and the keys each one needs', async ({ page }) => {
+  await openApp(page)
+  await page.click('#tab-settings')
+
+  // Every route api.ts knows about is offered, and the key status follows the selection
+  // rather than being a fixed OpenAI/Anthropic pair.
+  const provider = page.locator('#sProvider')
+  await expect(provider.locator('option')).toHaveCount(4)
+  await expect(provider).toHaveValue('direct')
+  await expect(page.locator('#sRouteKeys')).toContainText('ANTHROPIC_API_KEY')
+
+  await provider.selectOption('openrouter')
+  await expect(page.locator('#sRouteKeys')).toContainText('OPENROUTER_API_KEY')
+  await expect(page.locator('#sRouteKeys')).not.toContainText('ANTHROPIC_API_KEY')
+
+  // The e2e server runs with no keys set, so this must read as missing, not configured.
+  await expect(page.locator('#sRouteKeys')).toContainText('missing')
+
+  // An unqualified model ID is rejected by the server and the reason is shown, rather
+  // than being saved and failing later on a billed call.
+  await provider.selectOption('direct')
+  await page.fill('#sImageModel', 'gpt-image-1')
+  await page.click('#sSaveModels')
+  await expect(page.locator('#sModelErr')).toContainText('<provider>/<name>')
+
+  await page.fill('#sImageModel', 'openai/gpt-image-1')
+  await page.click('#sSaveModels')
+  await expect(page.locator('#sModelMsg')).toBeVisible()
+})
+
 test('instantiates an export template and previews the mapping', async ({ page }) => {
   await openApp(page)
   await page.click('#tab-exports')

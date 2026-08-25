@@ -78,6 +78,20 @@ export function readSites(ws: Workspace): any[] {
   return JSON.parse(readFileSync(ws.sitesPath, 'utf-8'))
 }
 
+/**
+ * Seeds config.json — the provider route and model IDs are read from it on every call, so
+ * this is how a test picks which route the model calls take. Written whole, not merged:
+ * config.json outlives the per-test reset, and a leftover key from an earlier test picking
+ * a different route is exactly the kind of cross-test bleed that's hard to see later.
+ */
+export function writeConfig(ws: Workspace, config: Record<string, any>) {
+  writeFileSync(ws.configPath, JSON.stringify(config, null, 2))
+}
+
+export function clearConfig(ws: Workspace) {
+  rmSync(ws.configPath, { force: true })
+}
+
 let itemSeq = 0
 
 // A complete catalog item — every field enrich()/the export mapper expects — with
@@ -104,7 +118,7 @@ export function item(overrides: Record<string, any> = {}): Record<string, any> {
   }
 }
 
-export function fixture(hits: Record<string, any>[]) {
+function fixture(hits: Record<string, any>[]) {
   return {
     hits, nbHits: hits.length, page: 0, nbPages: 1,
     hitsPerPage: 20, processingTimeMS: 1, query: '',
@@ -185,6 +199,6 @@ export function noBody(method: string, init: RequestInit = {}): RequestInit {
 }
 
 /** A GET with the same-origin headers set — for routes behind the CSRF middleware. */
-export function get(init: RequestInit = {}): RequestInit {
+function get(init: RequestInit = {}): RequestInit {
   return noBody('GET', init)
 }

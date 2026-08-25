@@ -10,6 +10,12 @@ import { promisify } from 'node:util'
 import { lookup } from 'node:dns/promises'
 import archiver from 'archiver'
 import sharp from 'sharp'
+import { generateText, generateImage } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createGateway } from '@ai-sdk/gateway'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 const execFileAsync = promisify(execFile)
 
@@ -145,7 +151,13 @@ function getAllCats(): string[] {
 const DEFAULTS = {
   basePromptClothing: 'create an image for a clothing shopping website PDP page for the following product, must have white background, the product only, no text, no person, the product is laying flat on a white surface and it perfectly aligned and fully visible, 1:1 aspect ratio / a square. the product is: {item}',
   basePromptHome: 'create a product image for a home improvement retail website, must have white background, the product only, no text, no person or hands, the product displayed straight-on and perfectly centered against a plain white surface, fully visible, 1:1 aspect ratio / a square. the product is: {item}',
-  model: 'gpt-image-1',
+  // Which route the model calls take (see PROVIDER_ROUTES) and which models to ask for.
+  // All three model IDs are "<provider>/<name>" — the form the aggregators already use, and
+  // the form the direct route splits on. Endpoints and keys are NOT here; see resolveRoute().
+  provider: 'direct',
+  textModel: 'anthropic/claude-opus-5',
+  textModelFast: 'anthropic/claude-haiku-4-5',
+  imageModel: 'openai/gpt-image-1',
   landingDemoMode: false,
 }
 
@@ -206,8 +218,17 @@ function addToManifest(objectID: string) {
 }
 
 function loadConfig() {
-  try { return { ...DEFAULTS, ...JSON.parse(readFileSync(CONFIG, 'utf-8')) } }
-  catch { return { ...DEFAULTS } }
+  let stored: Record<string, any> = {}
+  try { stored = JSON.parse(readFileSync(CONFIG, 'utf-8')) } catch { /* first run / unreadable → defaults */ }
+  // Pre-provider config.json files carry a bare `model` holding an unqualified OpenAI image
+  // model ("gpt-image-1"). Read it forward into the qualified `imageModel` so an existing
+  // install keeps generating with the model its owner picked, instead of silently snapping
+  // back to the default. Migrated in memory only — the old key is dropped on the next write.
+  if (stored.model && !stored.imageModel) {
+    stored.imageModel = String(stored.model).includes('/') ? stored.model : `openai/${stored.model}`
+  }
+  delete stored.model
+  return { ...DEFAULTS, ...stored }
 }
 
 function saveConfig(patch: Record<string, string>) {
@@ -343,62 +364,197 @@ function updateItem(objectID: string, mutator: (item: any) => void): any | null 
   return found.data.hits[idx]
 }
 
-// ── AI helpers ────────────────────────────────────────────────────────────────
+// ── AI providers ──────────────────────────────────────────────────────────────
+// Every model call in this file goes through the Vercel AI SDK, and every one of them
+// resolves its model the same way: config.json says *which* model ("<provider>/<name>")
+// and *which route* to reach it by; the environment says *where* that route lives and
+// with what credentials. Nothing below ever hardcodes a hostname.
+//
+// The split is deliberate and is a security boundary, not a style choice. /api/config is
+// unauthenticated by design (see the auth notes in server.ts), so anything reachable
+// through it is settable by anyone who can reach the port. A model ID is inert. A base URL
+// is not — pointing it at an attacker-controlled host would hand them the API key on the
+// next call. So route *names* are config (validated against PROVIDER_ROUTES below, which
+// is a closed set), while the URL each name resolves to and the keys are env-only.
+//
+// Adding a route means adding an entry here and nothing else: the settings endpoint, the
+// validator, and the UI's dropdown are all generic over this object.
+const PROVIDER_ROUTES = {
+  // Straight at the vendors. The only route that splits the "<provider>/<name>" model ID —
+  // the vendor APIs want the bare name — and so the only one whose prefix must be a vendor
+  // this project knows how to construct.
+  direct: {
+    label: 'Direct (OpenAI + Anthropic)',
+    keyVars: ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'],
+  },
+  gateway: {
+    label: 'Vercel AI Gateway',
+    keyVars: ['AI_GATEWAY_API_KEY'],
+  },
+  openrouter: {
+    label: 'OpenRouter',
+    keyVars: ['OPENROUTER_API_KEY'],
+  },
+  // Anything speaking the OpenAI wire format — a self-hosted proxy, LiteLLM, an internal
+  // gateway. LLM_BASE_URL is required because there is no sensible default to fall back to.
+  compatible: {
+    label: 'OpenAI-compatible endpoint',
+    keyVars: ['LLM_API_KEY'],
+  },
+} as const
 
-async function callOpenAI(prompt: string, model: string): Promise<string> {
-  const key = process.env.OPENAI_API_KEY
-  if (!key) throw new Error('OPENAI_API_KEY not set')
-  const body: any = { model, prompt, n: 1, size: '1024x1024' }
-  body.quality = model === 'dall-e-3' ? 'standard' : model === 'dall-e-2' ? undefined : 'medium'
-  if (body.quality === undefined) delete body.quality
-  const res = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const err: any = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? `OpenAI ${res.status}`)
-  }
-  const result: any = await res.json()
-  const item = result.data?.[0]
-  if (!item) throw new Error('No image data returned')
-  if (item.b64_json) return item.b64_json
-  if (item.url) {
-    const imgRes = await fetch(item.url)
-    return Buffer.from(await imgRes.arrayBuffer()).toString('base64')
-  }
-  throw new Error('No image data returned')
+type ProviderRoute = keyof typeof PROVIDER_ROUTES
+
+const PROVIDER_ROUTE_KEYS = Object.keys(PROVIDER_ROUTES) as ProviderRoute[]
+
+function isProviderRoute(v: unknown): v is ProviderRoute {
+  return typeof v === 'string' && (PROVIDER_ROUTE_KEYS as string[]).includes(v)
 }
 
-// Edits an existing image in place (OpenAI /v1/images/edits) rather than generating fresh
-// from a text prompt — used by the "Tweak" action. Only gpt-image-1 and dall-e-2 support
-// this endpoint (dall-e-3 is generation-only), so callers should pass 'gpt-image-1'.
-async function callOpenAIEdit(imageBuffer: Buffer, prompt: string, model: string): Promise<string> {
-  const key = process.env.OPENAI_API_KEY
-  if (!key) throw new Error('OPENAI_API_KEY not set')
-  const form = new FormData()
-  form.append('model', model)
-  form.append('prompt', prompt)
-  form.append('image', new Blob([imageBuffer], { type: 'image/jpeg' }), 'image.jpg')
-  const res = await fetch('https://api.openai.com/v1/images/edits', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}` },
-    body: form,
-  })
-  if (!res.ok) {
-    const err: any = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? `OpenAI ${res.status}`)
+// A model ID is "<provider>/<name>" everywhere — "anthropic/claude-opus-5",
+// "openai/gpt-image-1". The aggregators take that string verbatim; the direct route
+// splits it. Enforced on write (POST /api/config) so a malformed ID is rejected at the
+// point someone sets it rather than surfacing later as an opaque 404 from a vendor.
+const MODEL_ID = /^[a-z0-9][\w.-]*\/[\w.:-]+$/i
+
+function splitModelId(id: string): { vendor: string; name: string } {
+  const slash = id.indexOf('/')
+  if (slash < 1) throw new Error(`Model ID must be "<provider>/<name>" — got "${id}"`)
+  return { vendor: id.slice(0, slash).toLowerCase(), name: id.slice(slash + 1) }
+}
+
+function requireKey(name: string): string {
+  const key = process.env[name]
+  if (!key) throw new Error(`${name} not set`)
+  return key
+}
+
+// Providers are rebuilt whenever the resolved (route, model vendor) pair changes rather
+// than being constructed once at module scope, because the route lives in config.json and
+// is editable at runtime from Settings — a module-scope provider would keep serving the
+// route that was current when the process started. Construction is cheap (no I/O, no
+// connection); the SDK reads global fetch per call, which is also what lets the test
+// suite's fetch stub intercept these.
+function providerFor(route: ProviderRoute, vendor: string) {
+  switch (route) {
+    case 'direct':
+      if (vendor === 'openai') {
+        return createOpenAI({ apiKey: requireKey('OPENAI_API_KEY'), baseURL: process.env.OPENAI_BASE_URL })
+      }
+      if (vendor === 'anthropic') {
+        return createAnthropic({ apiKey: requireKey('ANTHROPIC_API_KEY'), baseURL: process.env.ANTHROPIC_BASE_URL })
+      }
+      throw new Error(
+        `The "direct" route only knows openai/* and anthropic/* models — got "${vendor}/…". ` +
+        `Use the gateway, openrouter, or compatible route to reach other vendors.`,
+      )
+    case 'gateway':
+      return createGateway({ apiKey: requireKey('AI_GATEWAY_API_KEY'), baseURL: process.env.AI_GATEWAY_BASE_URL })
+    case 'openrouter':
+      return createOpenRouter({ apiKey: requireKey('OPENROUTER_API_KEY'), baseURL: process.env.OPENROUTER_BASE_URL })
+    case 'compatible': {
+      const baseURL = process.env.LLM_BASE_URL
+      if (!baseURL) throw new Error('LLM_BASE_URL not set — required by the "compatible" provider route')
+      return createOpenAICompatible({ name: 'compatible', baseURL, apiKey: process.env.LLM_API_KEY })
+    }
   }
-  const result: any = await res.json()
-  const item = result.data?.[0]
-  if (!item) throw new Error('No image data returned')
-  if (item.b64_json) return item.b64_json
-  if (item.url) {
-    const imgRes = await fetch(item.url)
-    return Buffer.from(await imgRes.arrayBuffer()).toString('base64')
+}
+
+// Resolves a config model ID to something generateText/generateImage can take. The direct
+// route addresses the vendor's own model name; every aggregator wants the qualified ID.
+function resolveModel(route: ProviderRoute, modelId: string, kind: 'language' | 'image') {
+  const { vendor, name } = splitModelId(modelId)
+  const provider: any = providerFor(route, vendor)
+  const wireId = route === 'direct' ? name : modelId
+  try {
+    const model = kind === 'image' ? provider.imageModel?.(wireId) : provider.languageModel(wireId)
+    if (!model) throw new Error(`The "${route}" route has no ${kind} model support`)
+    return model
+  } catch (err: any) {
+    // The SDK's own miss here is "No such imageModel: <name>", which reads as a typo in
+    // the model name when the real problem is usually the vendor: Anthropic publishes no
+    // image models at all, so anthropic/* can carry every text call in this app and no
+    // image call. This app is otherwise runnable against a single provider, and that is
+    // the one combination where one isn't enough — so name the vendor and the way out.
+    if (err?.name === 'AI_NoSuchModelError' || /No such \w+Model/.test(String(err?.message))) {
+      throw new Error(
+        `"${vendor}" has no ${kind} model "${name}" on the "${route}" route. ` +
+        (kind === 'image' && vendor === 'anthropic'
+          ? 'Anthropic does not offer image models — set the image model to an openai/* one, ' +
+            'or use the gateway, openrouter, or compatible route.'
+          : 'Check the model ID.'),
+      )
+    }
+    throw err
   }
-  throw new Error('No image data returned')
+}
+
+function activeRoute(): ProviderRoute {
+  const route = loadConfig().provider
+  if (!isProviderRoute(route)) throw new Error(`Unknown provider route "${route}"`)
+  return route
+}
+
+// The SDK wraps upstream failures in its own error classes; the UI has always shown the
+// provider's own message ("billing hard limit reached", "overloaded", "invalid model") and
+// that is the only part worth reading, so dig it back out.
+//
+// Two layers to get through. A retryable status (429, 5xx) is retried transparently and
+// the failures are then wrapped in a RetryError whose own message is "Failed after 3
+// attempts. Last error: …" — useful in a log, noise in the UI — so unwrap to the last real
+// error first. Then pull the provider's message out of that error's raw response body.
+function providerErrorMessage(err: any): string {
+  const cause = err?.lastError ?? err?.errors?.[err.errors.length - 1] ?? err
+  const body = cause?.responseBody ?? cause?.data
+  if (typeof body === 'string') {
+    try {
+      const parsed = JSON.parse(body)
+      const msg = parsed?.error?.message ?? parsed?.message
+      if (msg) return String(msg)
+    } catch { /* not JSON — fall through to the error's own message */ }
+  }
+  const nested = cause?.data?.error?.message ?? cause?.error?.message
+  return String(nested ?? cause?.message ?? err?.message ?? 'Model call failed')
+}
+
+async function withProviderError<T>(fn: () => Promise<T>): Promise<T> {
+  try { return await fn() } catch (err: any) { throw new Error(providerErrorMessage(err)) }
+}
+
+// Generates a fresh image from a text prompt. Returns base64 — the caller whitens the
+// background and writes the bytes, exactly as before this went through the SDK.
+async function callImageModel(prompt: string, modelId: string): Promise<string> {
+  const route = activeRoute()
+  const { vendor, name } = splitModelId(modelId)
+  // `quality` is OpenAI-specific and its accepted values differ per model: dall-e-3 takes
+  // "standard", gpt-image-* take "medium", dall-e-2 takes none at all. Sent as a provider
+  // option so a non-OpenAI model never receives it.
+  const quality = name === 'dall-e-3' ? 'standard' : name.startsWith('dall-e') ? undefined : 'medium'
+  const providerOptions = vendor === 'openai' && quality ? { openai: { quality } } : undefined
+  const res = await withProviderError(() => generateImage({
+    model: resolveModel(route, modelId, 'image'),
+    prompt,
+    n: 1,
+    size: '1024x1024',
+    providerOptions,
+  }))
+  if (!res.image?.base64) throw new Error('No image data returned')
+  return res.image.base64
+}
+
+// Edits an existing image rather than generating a fresh one from the text prompt — used
+// by the "Tweak" action. Passing `images` is what turns this into an edit: on the direct
+// OpenAI route the SDK posts it to /v1/images/edits, on OpenRouter it becomes an
+// input_references entry. Not every model supports editing (dall-e-3 is generation-only),
+// so a model that can't will fail here with the provider's own message.
+async function callImageEdit(imageBuffer: Buffer, prompt: string, modelId: string): Promise<string> {
+  const route = activeRoute()
+  const res = await withProviderError(() => generateImage({
+    model: resolveModel(route, modelId, 'image'),
+    prompt: { text: prompt, images: [imageBuffer] },
+  }))
+  if (!res.image?.base64) throw new Error('No image data returned')
+  return res.image.base64
 }
 
 // Every generation prompt asks for a pure white background, but the model never renders
@@ -473,25 +629,20 @@ async function whitenBackground(buffer: Buffer): Promise<Buffer> {
   return sharp(data, { raw: { width, height, channels: channels as 1 | 2 | 3 | 4 } }).png().toBuffer()
 }
 
-async function callClaude(userMessage: string, opts?: { system?: string; maxTokens?: number; model?: string }): Promise<string> {
-  const key = process.env.ANTHROPIC_API_KEY
-  if (!key) throw new Error('ANTHROPIC_API_KEY not set')
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: opts?.model ?? process.env.LLM_CLAUDE_FAST ?? 'claude-haiku-4-5-20251001',
-      max_tokens: opts?.maxTokens ?? 120,
-      system: opts?.system ?? 'You write product image-generation prompts. Output one line only, no quotes, no explanation.',
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  })
-  if (!res.ok) {
-    const err: any = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? `Anthropic ${res.status}`)
-  }
-  const data: any = await res.json()
-  return (data.content?.[0]?.text ?? '').trim()
+// The one text entry point. Defaults to the 'fast' model — the short, high-volume calls
+// (image prompts, one-line descriptions) — with callers passing config.textModel explicitly
+// when a call is worth the stronger model. Which vendor either ID names, and how it's
+// reached, is entirely a matter of config; nothing here assumes Claude.
+async function callText(userMessage: string, opts?: { system?: string; maxTokens?: number; model?: string }): Promise<string> {
+  const route = activeRoute()
+  const modelId = opts?.model ?? loadConfig().textModelFast
+  const res = await withProviderError(() => generateText({
+    model: resolveModel(route, modelId, 'language'),
+    system: opts?.system ?? 'You write product image-generation prompts. Output one line only, no quotes, no explanation.',
+    prompt: userMessage,
+    maxOutputTokens: opts?.maxTokens ?? 120,
+  }))
+  return res.text.trim()
 }
 
 function enrichUserMessage(item: any, skin: string): string {
@@ -556,15 +707,41 @@ export const imageGenRoutes = new Hono()
 imageGenRoutes.get('/config', c => c.json(loadConfig()))
 imageGenRoutes.post('/config', async c => {
   const body = await c.req.json()
+  // This route is unauthenticated (see the PROVIDER_ROUTES notes), so what it accepts is
+  // the actual boundary on the model config. `provider` must name one of the closed set of
+  // routes — never an arbitrary string, and never a URL — and model IDs must be well-formed
+  // so a typo fails here rather than as an opaque error on the next billed call.
+  if ('provider' in body && !isProviderRoute(body.provider)) {
+    return c.json({ error: `provider must be one of: ${PROVIDER_ROUTE_KEYS.join(', ')}` }, 400)
+  }
+  for (const field of ['textModel', 'textModelFast', 'imageModel'] as const) {
+    if (field in body && !MODEL_ID.test(String(body[field] ?? ''))) {
+      return c.json({ error: `${field} must be a "<provider>/<name>" model ID` }, 400)
+    }
+  }
   return c.json({ ok: true, config: saveConfig(body) })
 })
-imageGenRoutes.get('/settings', c => c.json({
-  catalogPath:  CATALOG,
-  imagesPath:   IMAGES,
-  model:        loadConfig().model,
-  anthropicKey: !!process.env.ANTHROPIC_API_KEY,
-  openaiKey:    !!process.env.OPENAI_API_KEY,
-}))
+imageGenRoutes.get('/settings', c => {
+  const config = loadConfig()
+  return c.json({
+    catalogPath:   CATALOG,
+    imagesPath:    IMAGES,
+    provider:      config.provider,
+    textModel:     config.textModel,
+    textModelFast: config.textModelFast,
+    imageModel:    config.imageModel,
+    // The routes and which env keys each one needs, so the UI can report a missing key for
+    // whatever is actually selected instead of asking about OpenAI and Anthropic forever.
+    // Only ever whether a key is present — never any part of its value.
+    routes: PROVIDER_ROUTE_KEYS.map(key => ({
+      key,
+      label: PROVIDER_ROUTES[key].label,
+      keys: Object.fromEntries(PROVIDER_ROUTES[key].keyVars.map(v => [v, !!process.env[v]])),
+    })),
+    anthropicKey: !!process.env.ANTHROPIC_API_KEY,
+    openaiKey:    !!process.env.OPENAI_API_KEY,
+  })
+})
 
 // Sites (aka "skins") — top-level verticals like Clothing/Home, each owning a set of
 // categories. Lets the catalog grow beyond the two demo verticals without a code change.
@@ -750,7 +927,7 @@ async function generateImageHandler(c: any) {
   const item   = body.imagePrompt ?? found.item.imagePrompt ?? autoPrompt(found.item)
   const full   = base.replace('{item}', item)
   try {
-    const b64 = await callOpenAI(full, config.model)
+    const b64 = await callImageModel(full, config.imageModel)
     if (!existsSync(IMAGES)) mkdirSync(IMAGES, { recursive: true })
     writeFileSync(join(IMAGES, `${objectID}.jpg`), await whitenBackground(Buffer.from(b64, 'base64')))
     addToManifest(objectID)
@@ -768,9 +945,10 @@ async function generateImageHandler(c: any) {
 
 imageGenRoutes.post('/:objectID/generate', generateImageHandler)
 
-// Edits the existing image in place rather than regenerating from the text prompt —
-// always uses gpt-image-1 (the only model with edit support that this project also
-// uses for generation), regardless of the model configured in Settings.
+// Edits the existing image in place rather than regenerating from the text prompt, using
+// whatever image model Settings has configured. Not every model can edit (dall-e-3 is
+// generation-only); one that can't fails with the provider's own message rather than being
+// silently swapped out, so the mismatch is visible instead of quietly ignored.
 // Tweak is a preview, not an in-place edit: the result is written to a separate
 // "<objectID>-tweak.jpg" candidate file so the original is never touched until the
 // user explicitly accepts it (POST .../tweak/accept) or discards it (.../tweak/discard).
@@ -785,7 +963,7 @@ imageGenRoutes.post('/:objectID/tweak', async c => {
   try {
     const imageBuffer = readFileSync(imgPath)
     const editPrompt = `${note.trim()}. Keep the white background, framing, and composition otherwise the same.`
-    const b64 = await callOpenAIEdit(imageBuffer, editPrompt, 'gpt-image-1')
+    const b64 = await callImageEdit(imageBuffer, editPrompt, loadConfig().imageModel)
     const tweakPath = join(IMAGES, `${objectID}-tweak.jpg`)
     writeFileSync(tweakPath, await whitenBackground(Buffer.from(b64, 'base64')))
     return c.json({ ok: true, tweakUrl: `/images/${objectID}-tweak.jpg?t=${Date.now()}` })
@@ -879,7 +1057,7 @@ imageGenRoutes.post('/:objectID/enrich', async c => {
   const found = findItem(objectID)
   if (!found) return c.json({ error: 'Not found' }, 404)
   try {
-    const imagePrompt = await callClaude(enrichUserMessage(found.item, found.site))
+    const imagePrompt = await callText(enrichUserMessage(found.item, found.site))
     const idx = (found.data.hits as any[]).findIndex(h => h.objectID === objectID)
     found.data.hits[idx].imagePrompt = imagePrompt
     saveFixture(found.site, found.cat, found.data)
@@ -895,7 +1073,7 @@ imageGenRoutes.post('/:objectID/describe', async c => {
   const tags = (item.tags ?? []).filter((t: string) => !SKIP_TAGS.has(t)).join(', ')
   const msg = [`Name: ${item.name}`, item.brand ? `Brand: ${item.brand}` : '', tags ? `Tags: ${tags}` : '', item.fit ? `Fit: ${item.fit}` : '', item.price ? `Price: $${item.price}` : ''].filter(Boolean).join('\n')
   try {
-    const description = await callClaude(msg, { system: 'You write retail product descriptions. Write 1–2 sentences. Specific and punchy. Plain text only.', maxTokens: 250 })
+    const description = await callText(msg, { system: 'You write retail product descriptions. Write 1–2 sentences. Specific and punchy. Plain text only.', maxTokens: 250 })
     const idx = (found.data.hits as any[]).findIndex(h => h.objectID === objectID)
     found.data.hits[idx].description = description
     saveFixture(found.site, found.cat, found.data)
@@ -920,7 +1098,7 @@ Each item must have EXACTLY these fields:
 Style tag instructions: ${styleInstruction}
 Output ONLY a valid JSON array. No markdown, no prose.`
   try {
-    const raw = await callClaude(prompt, { system, maxTokens: 2000 })
+    const raw = await callText(prompt, { system, maxTokens: 2000 })
     const match = raw.match(/\[[\s\S]*\]/)
     if (!match) throw new Error('No JSON array in response')
     const items = JSON.parse(match[0])
@@ -935,7 +1113,7 @@ imageGenRoutes.post('/describe-adhoc', async c => {
   const tagStr = (tags ?? []).filter((t: string) => !SKIP_TAGS.has(t)).join(', ')
   const msg = [`Name: ${name}`, brand ? `Brand: ${brand}` : '', colour ? `Colour: ${colour}` : '', tagStr ? `Tags: ${tagStr}` : '', fit && fit !== 'unisex' ? `Fit: ${fit}` : '', price ? `Price: $${price}` : ''].filter(Boolean).join('\n')
   try {
-    const description = await callClaude(msg, { system: 'You write retail product descriptions. 1–2 sentences. First sentence MUST name the exact colour. Plain text only.', maxTokens: 250 })
+    const description = await callText(msg, { system: 'You write retail product descriptions. 1–2 sentences. First sentence MUST name the exact colour. Plain text only.', maxTokens: 250 })
     return c.json({ ok: true, description })
   } catch (err: any) { return c.json({ error: err.message }, 500) }
 })
@@ -945,7 +1123,7 @@ imageGenRoutes.post('/suggest-adhoc', async c => {
   if (!name) return c.json({ error: 'name required' }, 400)
   const msg = enrichUserMessage({ name, brand, tags, fit, colour }, site)
   try {
-    const imagePrompt = await callClaude(msg, { maxTokens: 120 })
+    const imagePrompt = await callText(msg, { maxTokens: 120 })
     return c.json({ ok: true, imagePrompt })
   } catch (err: any) { return c.json({ error: err.message }, 500) }
 })
@@ -959,7 +1137,7 @@ imageGenRoutes.post('/generate-adhoc-image', async c => {
   const base = getSiteBasePrompt(site)
   const full = base.replace('{item}', imagePrompt)
   try {
-    const b64 = await callOpenAI(full, config.model)
+    const b64 = await callImageModel(full, config.imageModel)
     if (!existsSync(IMAGES)) mkdirSync(IMAGES, { recursive: true })
     const fname = `pending-${safeTempId}.jpg`
     writeFileSync(join(IMAGES, fname), await whitenBackground(Buffer.from(b64, 'base64')))
@@ -1478,9 +1656,25 @@ function applyKnownFieldOverrides(sample: any, systemName: string): any {
 }
 
 // ── Claude web search for schema lookup ───────────────────────────────────
+// The one model call in this file that is NOT provider-portable. It leans on Anthropic's
+// server-side web_search tool: the search runs inside the single API call, which is why
+// there's no agent loop here. That tool is Anthropic-specific and, going through an
+// aggregator that re-frames requests as OpenAI chat completions, is either dropped or
+// rejected — so rather than making a call that quietly comes back without having searched
+// anything, this requires the direct Anthropic route and says so plainly when it isn't.
+// The schema-from-URL flow is the fallback for every other configuration.
 async function lookupSchemaWithWebSearch(name: string, description: string): Promise<any> {
-  const key = process.env.ANTHROPIC_API_KEY
-  if (!key) throw new Error('ANTHROPIC_API_KEY not set')
+  const config = loadConfig()
+  const route = activeRoute()
+  const { vendor, name: modelName } = splitModelId(config.textModel)
+  if (route !== 'direct' || vendor !== 'anthropic') {
+    throw new Error(
+      `Schema lookup by web search needs an anthropic/* text model on the "direct" provider route ` +
+      `(currently "${config.textModel}" on "${route}") — it uses Anthropic's server-side web search, ` +
+      `which the other routes don't carry. Paste or link the schema instead.`,
+    )
+  }
+  const anthropicProvider = providerFor('direct', 'anthropic') as ReturnType<typeof createAnthropic>
 
   const system = `You are a system integration expert. The user wants to find the canonical product/item schema for a specific platform integration.
 
@@ -1506,35 +1700,17 @@ Rules for hasStandardSchema and the "sample" field — this is critical:
 
 Use the real field names from what you find. Output ONLY the JSON object.`
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'web-search-2025-03-05',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: process.env.LLM_CLAUDE_CHAT ?? 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      system,
-      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
-      messages: [{ role: 'user', content: `Integration: ${name}\nDescription: ${description || '(none)'}` }],
-    }),
-  })
-  if (!res.ok) {
-    const err: any = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? `Anthropic ${res.status}`)
-  }
-  const data: any = await res.json()
+  const res = await withProviderError(() => generateText({
+    model: anthropicProvider.languageModel(modelName),
+    system,
+    prompt: `Integration: ${name}\nDescription: ${description || '(none)'}`,
+    maxOutputTokens: 4000,
+    tools: { web_search: anthropicProvider.tools.webSearch_20250305({ maxUses: 3 }) },
+  }))
 
-  // web search is server-side — concatenate all text blocks from the single response
-  const text = (data.content ?? [])
-    .filter((b: any) => b.type === 'text')
-    .map((b: any) => b.text)
-    .join('')
-
-  const match = text.match(/\{[\s\S]*\}/)
+  // web search runs server-side inside the single call, so there's nothing to loop over —
+  // the SDK concatenates the response's text blocks into .text for us.
+  const match = res.text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('No JSON in response')
   const parsed = JSON.parse(match[0])
   parsed.sample = applyKnownFieldOverrides(parsed.sample, parsed.systemName)
@@ -1642,7 +1818,7 @@ Rules for the "sample" field — this represents ONE real record as it would app
 - IMPORTANT — do not fabricate individual fields either: if a field is merchant-configurable / dynamic (e.g. custom_fields, metafields) and this page only shows it as an opaque placeholder ("custom_fields": {}) without documenting real sub-field names, do NOT invent plausible-looking keys for it — leave it as an empty array/object and note it in schemaNote rather than guessing.
 Output ONLY the raw JSON object.`
 
-  const raw = await callClaude(text, { system, maxTokens: 1500, model: process.env.LLM_CLAUDE_CHAT })
+  const raw = await callText(text, { system, maxTokens: 1500, model: loadConfig().textModel })
   const match = raw.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('Could not parse schema from page')
   const parsed = JSON.parse(match[0])
@@ -1711,7 +1887,7 @@ Output ONLY a valid JSON array. No markdown, no explanation.`
 
   const validDraftSources = new Set(Object.keys(cleanSample))
   try {
-    const raw = await callClaude(name + (description ? ': ' + description : ''), { system, maxTokens: 2000 })
+    const raw = await callText(name + (description ? ': ' + description : ''), { system, maxTokens: 2000 })
     const match = raw.match(/\[[\s\S]*\]/)
     if (!match) throw new Error('No JSON array in response')
     const allFields: ExportField[] = JSON.parse(match[0])
@@ -1775,7 +1951,7 @@ Output ONLY a valid JSON array of field mapping objects with shape:
 No markdown, no explanation.`
 
   try {
-    const raw = await callClaude(instruction, { system, maxTokens: 2000 })
+    const raw = await callText(instruction, { system, maxTokens: 2000 })
     const match = raw.match(/\[[\s\S]*\]/)
     if (!match) throw new Error('No JSON array in response')
     const updated: ExportField[] = JSON.parse(match[0])
@@ -1952,6 +2128,8 @@ export {
   setNestedValue, getNestedValue, resolveSourceValue, resolveFileUrl,
   transformValue, applyExportMap, extractPaths, toStoredSchema,
   isPrivateAddress, assertPublicUrl, whitenBackground,
+  splitModelId, isProviderRoute, resolveModel, providerErrorMessage,
+  PROVIDER_ROUTES, PROVIDER_ROUTE_KEYS, MODEL_ID,
   getAllCatalogItems, loadExportMaps, loadExportMap, EXPORT_TEMPLATES,
 }
 export type { CatalogItem, CatalogFixture, SiteDef, ExportField, ExportMap }

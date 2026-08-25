@@ -8,8 +8,8 @@ It's built for people building demos and integrations, not for running a real st
 
 ## What it does
 
-- **Generates product data** — single items by hand, or a batch of items from a natural-language prompt ("12 minimalist ceramic vases, $40–120") via Claude.
-- **Generates product images** — via OpenAI (`gpt-image-1`, `gpt-image-2`, `dall-e-3`, or `dall-e-2`, configurable in Settings), using a base image prompt per catalog plus a per-product description. An existing image can also be edited in place ("Tweak") rather than regenerated from scratch. Every generated image is post-processed to force a genuinely pure `#ffffff` background — the model consistently renders "white" a few units off no matter how the prompt is worded, so this is pixel correction (a tolerant flood-fill from the image edges), not prompt engineering. See the `whitenBackground()` implementation notes in `api.ts` for how it avoids bleeding into white/light-colored products.
+- **Generates product data** — single items by hand, or a batch of items from a natural-language prompt ("12 minimalist ceramic vases, $40–120") via whichever text model is configured.
+- **Generates product images** — via the configured image model (`openai/gpt-image-1` by default; set in Settings, and reachable directly or through a gateway — see **Models and providers**), using a base image prompt per catalog plus a per-product description. An existing image can also be edited in place ("Tweak") rather than regenerated from scratch. Every generated image is post-processed to force a genuinely pure `#ffffff` background — the model consistently renders "white" a few units off no matter how the prompt is worded, so this is pixel correction (a tolerant flood-fill from the image edges), not prompt engineering. See the `whitenBackground()` implementation notes in `api.ts` for how it avoids bleeding into white/light-colored products.
 - **Organizes products into catalogs and categories** — a "catalog" (called a *site* internally) is a top-level vertical like Clothing or Home, each with its own categories and its own base image prompt. The same category name can exist independently in two different catalogs.
 - **Builds export field maps** — define how your catalog's fields map onto a target system's schema (dotted paths, array grouping, transforms, computed fields), preview the result against a real product, then run or download it as JSON + a zip of the referenced images.
 - **Exposes a read-only (+ limited write) REST API** for other services to consume the catalog directly, separate from the local web UI.
@@ -20,7 +20,7 @@ It's built for people building demos and integrations, not for running a real st
 - **No database.** Products are flat JSON files on disk (Algolia-style `hits` arrays), one file per category. Fine for demo-scale catalogs; not built for anything approaching production scale.
 - **No live external catalog source.** You can't point this app at another live system and have it transparently read/write through that connection — the whole data layer is synchronous local-file I/O, and wiring in a genuinely external source would mean converting most of `api.ts` to async. See the code comments in `api.ts` under `loadFixture`/`saveFixture` for the specifics of why, and the smaller "one-time import" alternative that was scoped but not built.
 - **No authentication on the local UI's own API.** `/api/*` (everything the web UI itself calls — image generation, edits, deletes, backup restore) is unauthenticated by design, since this is meant to run locally for one person. Don't expose that port to anything but `localhost` without adding auth. The separate `/catalog/*` surface (for other services to consume) *is* token-gated — see **Auth** below.
-- **No automated tests.** Verification in this project has been manual/curl-based throughout its development.
+- **No end-to-end guarantee of what the AI produces.** There is an automated test suite (`npm test`, plus Playwright specs under `test/e2e`), but it stubs every outbound model call — it checks what the app does with a response, not the quality of the response itself.
 - **Image generation costs real money** (OpenAI billing) and there's no built-in spend tracking — keep an eye on your OpenAI usage dashboard.
 
 ---
@@ -40,7 +40,7 @@ npm run dev
 # tsx watch src/server.ts → http://localhost:3004/products
 ```
 
-Either way, you'll need at minimum an `ANTHROPIC_API_KEY` (product copy, prompts) and an `OPENAI_API_KEY` (image generation) in `.env`. See **Environment variables** below for the full list.
+Either way you'll need credentials in `.env`. Out of the box the app talks to Anthropic and OpenAI directly, so that means an `ANTHROPIC_API_KEY` (product copy, prompts) and an `OPENAI_API_KEY` (image generation) — but you can point it at Vercel AI Gateway, OpenRouter, or any OpenAI-compatible proxy instead and set that service's key alone. See **Models and providers** and **Environment variables** below.
 
 > **Catalog data lives outside this repo by default.** `docker-compose.yml` bind-mounts `../greeter/catalog/fixtures` and `../greeter/catalog/images` — the Greeter project owns this content, not part of this checkout — so a bare `git clone` of just this repo starts with an empty catalog (the app runs fine, there's just nothing in it yet). Either check out `greeter` alongside this repo, or point `CATALOG_PATH`/`IMAGES_PATH` at wherever you'd rather keep product data, then add your first catalog/category from Settings.
 
@@ -53,7 +53,7 @@ Either way, you'll need at minimum an `ANTHROPIC_API_KEY` (product copy, prompts
 - **Backend:** [Hono](https://hono.dev/) on `@hono/node-server`, all routes in `src/products/api.ts`. No ORM, no build step for the server — just TypeScript run through `tsx`.
 - **Frontend:** a single file, `src/products/ui.html` — plain HTML/CSS/JS, no framework, no bundler. Served via `readFileSync` on every request.
 - **Data:** flat JSON files under `data/catalog/` (product fixtures, Algolia `hits` shape) and `data/images/` (generated/uploaded images), both bind-mountable so they can be shared with other local tools.
-- **AI providers:** Claude for text (product copy, image prompts, export-map drafting), OpenAI for images. Both are called only from `api.ts` — never import either SDK anywhere else.
+- **AI providers:** all model calls go through the [Vercel AI SDK](https://ai-sdk.dev/) from `api.ts` — never import a provider anywhere else. Text (product copy, image prompts, export-map drafting) and images are configured independently; see **Models and providers** below.
 
 **Headless and API-first by construction, not just by description:** the web UI (`ui.html`) and the `/catalog` REST API are separate, independent consumers of the same catalog data — the UI has no access the API doesn't also expose. That's proven in practice, not just in principle: Greeter, a separate project, is a second real frontend that consumes this catalog purely through `/catalog`, with no dependency on this project's own UI at all.
 
@@ -103,6 +103,38 @@ The content field is `text`, not `value`; `id`/`product_id` are auto-assigned by
 
 ---
 
+## Models and providers
+
+Every model call goes through the Vercel AI SDK, so which models you use and how you reach them are separate choices. Both live in Settings → Models.
+
+**Model IDs are always `provider/name`** — `anthropic/claude-opus-5`, `openai/gpt-image-1`. Three are configured independently:
+
+| Setting | Used for |
+| --- | --- |
+| Text model | Batch item generation, export-map drafting, schema lookup |
+| Fast text model | Short, high-volume calls — image prompts, one-line descriptions |
+| Image model | Product image generation, and the "Tweak" edit |
+
+**The route** — how those models are reached — is one of:
+
+| Route | Reaches | Needs |
+| --- | --- | --- |
+| `direct` | OpenAI and Anthropic themselves | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` |
+| `gateway` | Vercel AI Gateway | `AI_GATEWAY_API_KEY` |
+| `openrouter` | OpenRouter | `OPENROUTER_API_KEY` |
+| `compatible` | Any OpenAI-compatible endpoint — a proxy, LiteLLM, an internal gateway | `LLM_BASE_URL` (required), `LLM_API_KEY` |
+
+On `direct` the `provider/` prefix picks the vendor and is stripped before the call; on every other route the qualified ID is passed through as-is, which is the form those services already expect. Adding a route means adding one entry to `PROVIDER_ROUTES` in `api.ts` — the settings endpoint, the validator, and the UI dropdown are all generic over it.
+
+**One provider is enough** — `gateway`, `openrouter`, and `compatible` each cover text and images on a single key, and so does `direct` with OpenAI alone. The one exception is Anthropic: it publishes no image models, so `anthropic/*` can serve every text call in this app and no image call. Anthropic-only means either pairing it with an `openai/*` image model (the default configuration, which is why the quick start asks for both keys) or moving to one of the other routes. Selecting an Anthropic image model says exactly that rather than reporting a missing model.
+
+**Endpoints and keys are environment-only, deliberately.** `/api/*` is unauthenticated by design (see **Auth**), so anything settable through it is settable by anyone who can reach the port. A model ID is inert; a base URL is not — pointing it at another host would redirect billed calls and hand over the API key with them. So `config.json` holds a route *name* validated against a closed set, and the URL it resolves to lives in `.env`.
+
+**Two things don't travel across routes:**
+
+- **Schema lookup by web search** (Exports → describe your target) uses Anthropic's server-side web search, which the aggregator routes don't carry. It requires an `anthropic/*` text model on the `direct` route and says so plainly otherwise. Pasting or linking a schema works on every route.
+- **Image editing** ("Tweak") depends on the model, not the route — `gpt-image-1` can edit, `dall-e-3` is generation-only. A model that can't edit fails with the provider's own message rather than being silently swapped.
+
 ## Auth
 
 - **`/catalog/*`** — read-only-by-default REST API for other services to consume the catalog (`GET /catalog?category=&site=&style=&limit=&offset=`, `GET /catalog/:objectID`), plus a small authenticated write surface for image management (`POST /:objectID/generate`, `DELETE /:objectID/image`). Gated by `STUDIO_API_TOKEN` if set — send `Authorization: Bearer <token>`.
@@ -112,20 +144,32 @@ The content field is `text`, not `value`; `id`/`product_id` are auto-assigned by
 
 ## Environment variables
 
-```
-ANTHROPIC_API_KEY=      # required — product copy, prompts, export-map drafting
-LLM_CLAUDE_CHAT=        # e.g. claude-sonnet-4-6
-LLM_CLAUDE_FAST=        # e.g. claude-haiku-4-5-20251001
+**Which models get used, and how they're reached, are not environment variables** — they live in `config.json` and are edited from Settings → Models at runtime. The environment holds only credentials and endpoints. See **Models and providers** above for why the split falls there.
 
-OPENAI_API_KEY=         # required for image generation
-LLM_OPENAI_CHAT=        # e.g. gpt-4o
-LLM_OPENAI_FAST=        # e.g. gpt-4o-mini
+```
+# Route: direct (the default) — straight at the vendors
+ANTHROPIC_API_KEY=      # required for anthropic/* models
+OPENAI_API_KEY=         # required for openai/* models
+
+# Route: gateway / openrouter / compatible — set whichever you selected
+AI_GATEWAY_API_KEY=
+OPENROUTER_API_KEY=
+LLM_BASE_URL=           # required by the "compatible" route — no default
+LLM_API_KEY=
+
+# Optional per-route endpoint overrides (a mirror, a regional endpoint, a proxy)
+OPENAI_BASE_URL=
+ANTHROPIC_BASE_URL=
+AI_GATEWAY_BASE_URL=
+OPENROUTER_BASE_URL=
 
 PORT=3004
 CATALOG_PATH=           # product JSON fixtures — defaults to /app/data/catalog in Docker
 IMAGES_PATH=            # generated/uploaded images — defaults to /app/data/images in Docker
 STUDIO_API_TOKEN=       # bearer token for the /catalog/* API — omit to leave it open
 ```
+
+Upgrading from a pre-provider checkout: `LLM_CLAUDE_CHAT` and `LLM_CLAUDE_FAST` are gone — set the text models in Settings instead. An existing `config.json` carrying a bare `model` (e.g. `"gpt-image-1"`) is read forward automatically as `openai/gpt-image-1`, so a running install keeps the image model it had.
 
 ---
 

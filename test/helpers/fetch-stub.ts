@@ -35,7 +35,12 @@ export function installFetchStub(): FetchStub {
     const call: RecordedCall = {
       url,
       method: (init?.method ?? 'GET').toUpperCase(),
-      headers: Object.fromEntries(Object.entries((init?.headers ?? {}) as Record<string, string>)),
+      // Lower-cased because header casing is the client's choice, not the app's — the SDK
+      // sends `authorization` where the hand-rolled client sent `Authorization`, and no
+      // assertion here is meant to be about which one a given client picked.
+      headers: Object.fromEntries(
+        Object.entries((init?.headers ?? {}) as Record<string, string>).map(([k, v]) => [k.toLowerCase(), v]),
+      ),
       body,
     }
     calls.push(call)
@@ -64,28 +69,104 @@ function jsonResponse(body: unknown, status = 200): Response {
   })
 }
 
+// These envelopes are fuller than the fields api.ts actually reads, because the AI SDK
+// validates every provider response against the vendor's documented schema before handing
+// it over — a partial envelope fails as "Invalid JSON response" long before the handler
+// sees it. Keeping them realistic is the point: a stub the real client would reject isn't
+// testing the real path.
+
 /** A successful Anthropic Messages response carrying one text block. */
 export function anthropicText(text: string): Response {
-  return jsonResponse({ content: [{ type: 'text', text }] })
+  return jsonResponse({
+    id: 'msg_stub',
+    type: 'message',
+    role: 'assistant',
+    model: 'claude-stub',
+    content: [{ type: 'text', text }],
+    stop_reason: 'end_turn',
+    stop_sequence: null,
+    usage: { input_tokens: 1, output_tokens: 1 },
+  })
 }
 
 /** Anthropic's error envelope — api.ts surfaces error.message verbatim. */
 export function anthropicError(message: string, status = 400): Response {
-  return jsonResponse({ error: { message } }, status)
+  return jsonResponse({ type: 'error', error: { type: 'invalid_request_error', message } }, status)
 }
 
 /** A successful images/generations (or /edits) response returning inline base64. */
 export function openaiImage(pngBytes: Buffer): Response {
-  return jsonResponse({ data: [{ b64_json: pngBytes.toString('base64') }] })
+  return jsonResponse({ created: 1, data: [{ b64_json: pngBytes.toString('base64') }] })
 }
 
-/** The url-instead-of-b64 variant — api.ts fetches the URL as a second hop. */
+/** The url-instead-of-b64 variant. */
 export function openaiImageUrl(url: string): Response {
-  return jsonResponse({ data: [{ url }] })
+  return jsonResponse({ created: 1, data: [{ url }] })
 }
 
 export function openaiError(message: string, status = 400): Response {
   return jsonResponse({ error: { message } }, status)
+}
+
+/**
+ * A Responses API reply (`/v1/responses`) — what a text call to OpenAI *directly* uses.
+ * The SDK's OpenAI provider defaults to Responses, not chat completions, so this is the
+ * shape that route needs; the aggregators speak chat completions instead (`openaiChat`).
+ */
+export function openaiResponses(text: string): Response {
+  return jsonResponse({
+    id: 'resp_stub',
+    object: 'response',
+    created_at: 1,
+    status: 'completed',
+    model: 'stub',
+    output: [{
+      type: 'message',
+      id: 'msg_stub',
+      status: 'completed',
+      role: 'assistant',
+      content: [{ type: 'output_text', text, annotations: [] }],
+    }],
+    usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+  })
+}
+
+/**
+ * A chat-completions response — what the aggregator routes (OpenRouter, and any
+ * OpenAI-compatible proxy) answer with, whichever vendor's model is behind them. Text
+ * calls on those routes come back in this shape rather than Anthropic's block form.
+ */
+export function openaiChat(text: string): Response {
+  return jsonResponse({
+    id: 'chatcmpl-stub',
+    object: 'chat.completion',
+    created: 1,
+    model: 'stub',
+    choices: [{ index: 0, message: { role: 'assistant', content: text }, finish_reason: 'stop' }],
+    usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+  })
+}
+
+// ── Request readers ───────────────────────────────────────────────────────────
+// The SDK sends Anthropic's block form — `system` is an array of text blocks and each
+// message's `content` is an array of parts, rather than the bare strings the hand-rolled
+// client used to send. Same text either way; these unwrap it so the assertions can stay
+// about the prompt content rather than about the envelope carrying it.
+
+function blockText(value: any): string {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value.map(b => (typeof b === 'string' ? b : b?.text ?? '')).join('')
+  return value?.text ?? ''
+}
+
+/** The system prompt sent on a recorded Anthropic call. */
+export function sentSystem(call: RecordedCall): string {
+  return blockText(call.body?.system)
+}
+
+/** The nth user message sent on a recorded Anthropic call (defaults to the first). */
+export function sentMessage(call: RecordedCall, index = 0): string {
+  return blockText(call.body?.messages?.[index]?.content)
 }
 
 export function htmlPage(html: string): Response {

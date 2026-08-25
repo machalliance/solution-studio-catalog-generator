@@ -3,11 +3,11 @@ import { readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   createWorkspace, destroyWorkspace, writeSites, writeFixtureFile, readFixtureFile,
-  writeImage, imageExists, readManifest, pngBuffer, item, json,
+  writeImage, imageExists, readManifest, pngBuffer, item, json, writeConfig, clearConfig,
 } from '../helpers/workspace.ts'
 import {
-  installFetchStub, anthropicText, anthropicError,
-  openaiImage, openaiImageUrl, openaiError, htmlPage, type FetchStub,
+  installFetchStub, anthropicText, anthropicError, sentSystem, sentMessage,
+  openaiImage, openaiImageUrl, openaiError, openaiChat, openaiResponses, htmlPage, type FetchStub,
 } from '../helpers/fetch-stub.ts'
 import sharp from 'sharp'
 
@@ -66,7 +66,7 @@ describe('POST /api/:objectID/generate', () => {
 
     const sent = stub.callsTo(OPENAI)[0]
     expect(sent.url).toBe('https://api.openai.com/v1/images/generations')
-    expect(sent.headers.Authorization).toBe('Bearer test-openai-key')
+    expect(sent.headers.authorization).toBe('Bearer test-openai-key')
     expect(sent.body).toMatchObject({ prompt: 'home shot: Zellige, slim', n: 1, size: '1024x1024' })
 
     // written, recorded, and referenced from the item
@@ -102,12 +102,18 @@ describe('POST /api/:objectID/generate', () => {
     expect((await res.json() as any).fullPrompt).toBe('clothing shot: Chinos, slim')
   })
 
-  it('follows a url-style response by fetching the image', async () => {
+  // The hand-rolled client used to accept a url-style response and fetch the image as a
+  // second hop. Going through the SDK that path is gone: it asks for b64_json explicitly
+  // (dall-e-*) or gets it unconditionally (gpt-image-*), and rejects a response carrying
+  // only a URL. Kept as a test because the requirement that matters is unchanged — a
+  // response we can't read must fail loudly and write nothing, never leave a half-written
+  // image or a fixture pointing at a file that was never created.
+  it('rejects a url-only response instead of writing a partial image', async () => {
     stub.on(/images\/generations/, () => openaiImageUrl('https://files.example/out.png'))
-    stub.on(/files\.example/, () => new Response(nearWhite))
     const res = await app.request('/api/tile-001/generate', json({}))
-    expect(res.status).toBe(200)
-    expect(imageExists(ws, 'tile-001.jpg')).toBe(true)
+    expect(res.status).toBe(500)
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(false)
+    expect(readFixtureFile(ws, 'algolia-tile.json').hits[0].images).toEqual([])
   })
 
   it('surfaces the upstream error message and writes nothing', async () => {
@@ -120,10 +126,14 @@ describe('POST /api/:objectID/generate', () => {
   })
 
   it('reports a response carrying no image data', async () => {
-    stub.on(OPENAI, () => new Response(JSON.stringify({ data: [] }), { status: 200 }))
+    stub.on(OPENAI, () => new Response(JSON.stringify({ created: 1, data: [] }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    }))
     const res = await app.request('/api/tile-001/generate', json({}))
     expect(res.status).toBe(500)
-    expect(await res.json() as any).toEqual({ error: 'No image data returned' })
+    // the SDK's own wording — it rejects the empty response before the handler sees it
+    expect((await res.json() as any).error).toBe('No image generated.')
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(false)
   })
 
   it('fails cleanly when no API key is configured', async () => {
@@ -243,7 +253,7 @@ describe('POST /api/:objectID/enrich', () => {
     const sent = stub.callsTo(ANTHROPIC)[0]
     expect(sent.headers['x-api-key']).toBe('test-anthropic-key')
     expect(sent.headers['anthropic-version']).toBe('2023-06-01')
-    const msg = sent.body.messages[0].content
+    const msg = sentMessage(sent)
     expect(msg).toContain('Name: Wide Leg Trouser')
     expect(msg).toContain('Silhouette/form: wide-leg')
     expect(msg).toContain('Details: linen')   // 'premium' is filtered as non-visual
@@ -257,7 +267,7 @@ describe('POST /api/:objectID/enrich', () => {
     stub.on(ANTHROPIC, () => anthropicText('x'))
     await app.request('/api/tile-001/enrich', json({}))
 
-    const msg = stub.callsTo(ANTHROPIC)[0].body.messages[0].content
+    const msg = sentMessage(stub.callsTo(ANTHROPIC)[0])
     expect(msg).toContain('Form/style: zellige, matte')
     expect(msg).toContain('Lead with Form/style values')
     expect(msg).not.toContain('Gender')
@@ -292,13 +302,13 @@ describe('POST /api/:objectID/describe', () => {
     stub.on(ANTHROPIC, () => anthropicText('x'))
     await app.request('/api/tile-001/describe', json({}))
     const call = stub.callsTo(ANTHROPIC)[0]
-    const msg = call.body.messages[0].content
+    const msg = sentMessage(call)
     expect(msg).toContain('Name: Zellige')
     expect(msg).toContain('Brand: Clé')
     expect(msg).toContain('Tags: matte')
     expect(msg).not.toContain('premium')
     expect(msg).toContain('Price: $12')
-    expect(call.body.system).toContain('retail product descriptions')
+    expect(sentSystem(call)).toContain('retail product descriptions')
     expect(call.body.max_tokens).toBe(250)
   })
 
@@ -312,14 +322,14 @@ describe('POST /api/describe-adhoc and /api/suggest-adhoc', () => {
     stub.on(ANTHROPIC, () => anthropicText('A crisp oxford in pale blue.'))
     const res = await app.request('/api/describe-adhoc', json({ name: 'Oxford', colour: 'pale blue' }))
     expect(await res.json() as any).toEqual({ ok: true, description: 'A crisp oxford in pale blue.' })
-    expect(stub.callsTo(ANTHROPIC)[0].body.system).toContain('MUST name the exact colour')
+    expect(sentSystem(stub.callsTo(ANTHROPIC)[0])).toContain('MUST name the exact colour')
   })
 
   it('suggests an image prompt for an item that is not in the catalog yet', async () => {
     stub.on(ANTHROPIC, () => anthropicText('slim-fit oxford shirt in pale blue cotton'))
     const res = await app.request('/api/suggest-adhoc', json({ name: 'Oxford', site: 'clothing', fit: 'mens' }))
     expect(await res.json() as any).toEqual({ ok: true, imagePrompt: 'slim-fit oxford shirt in pale blue cotton' })
-    expect(stub.callsTo(ANTHROPIC)[0].body.messages[0].content).toContain("Gender: men's")
+    expect(sentMessage(stub.callsTo(ANTHROPIC)[0])).toContain("Gender: men's")
   })
 
   it('both require a name', async () => {
@@ -345,7 +355,7 @@ describe('POST /api/generate-items', () => {
   it("constrains the model to the chosen site's categories", async () => {
     stub.on(ANTHROPIC, () => anthropicText('[]'))
     await app.request('/api/generate-items', json({ prompt: 'x', site: 'clothing', priceRange: '50-100', styleHint: 'coastal' }))
-    const system = stub.callsTo(ANTHROPIC)[0].body.system
+    const system = sentSystem(stub.callsTo(ANTHROPIC)[0])
     expect(system).toContain('Valid categories: pants')
     expect(system).not.toContain('tile')
     expect(system).toContain('within $50-100')
@@ -355,7 +365,7 @@ describe('POST /api/generate-items', () => {
   it('falls back to every known category when the site is unknown', async () => {
     stub.on(ANTHROPIC, () => anthropicText('[]'))
     await app.request('/api/generate-items', json({ prompt: 'x', site: 'nope' }))
-    const system = stub.callsTo(ANTHROPIC)[0].body.system
+    const system = sentSystem(stub.callsTo(ANTHROPIC)[0])
     expect(system).toContain('pants')
     expect(system).toContain('tile')
   })
@@ -426,7 +436,7 @@ describe('POST /api/exports/draft', () => {
   it('tells the model a schema-free target is flat, and hides the UI-only fields', async () => {
     stub.on(ANTHROPIC, () => anthropicText('[]'))
     await app.request('/api/exports/draft', json({ name: 'Algolia Index' }))
-    const system = stub.callsTo(ANTHROPIC)[0].body.system
+    const system = sentSystem(stub.callsTo(ANTHROPIC)[0])
     expect(system).toContain('schema-free search engine')
     // The sample handed to the model must not carry enrich()'s derived fields — they are
     // not real catalog keys and a map built on one exports nothing. (They do appear in
@@ -444,7 +454,7 @@ describe('POST /api/exports/draft', () => {
     await app.request('/api/exports/draft', json({
       name: 'BigCommerce', targetSchema: '{"sku":"ABC"}', targetSystemName: 'BigCommerce',
     }))
-    const system = stub.callsTo(ANTHROPIC)[0].body.system
+    const system = sentSystem(stub.callsTo(ANTHROPIC)[0])
     expect(system).toContain('{"sku":"ABC"}')
     expect(system).toContain('custom_fields[].text')
     expect(system).not.toContain('schema-free search engine')
@@ -504,9 +514,9 @@ describe('POST /api/exports/refine', () => {
       targetSchema: '{"sku":"ABC"}', targetSystemName: 'BigCommerce',
     }))
     const call = stub.callsTo(ANTHROPIC)[0]
-    expect(call.body.system).toContain('"target": "title"')
-    expect(call.body.system).toContain('{"sku":"ABC"}')
-    expect(call.body.messages[0].content).toBe('do a thing')
+    expect(sentSystem(call)).toContain('"target": "title"')
+    expect(sentSystem(call)).toContain('{"sku":"ABC"}')
+    expect(sentMessage(call)).toBe('do a thing')
   })
 
   it('requires both fields and an instruction', async () => {
@@ -536,12 +546,17 @@ describe('POST /api/exports/schema-lookup', () => {
     expect(body.fields.sort()).toEqual(['prices.USD', 'sku', 'variants[].id', 'variants[].sku'])
   })
 
+  // No anthropic-beta header is asserted any more: web search is generally available and
+  // the SDK doesn't send one. The tool request itself is the actual requirement — without
+  // it the model answers from memory instead of reading the docs — so that's what's checked.
   it('asks for web search', async () => {
     stub.on(ANTHROPIC, () => anthropicText('{"sample":{}}'))
     await app.request('/api/exports/schema-lookup', json({ name: 'X' }))
     const call = stub.callsTo(ANTHROPIC)[0]
-    expect(call.headers['anthropic-beta']).toBe('web-search-2025-03-05')
-    expect(call.body.tools[0].name).toBe('web_search')
+    expect(call.url).toBe('https://api.anthropic.com/v1/messages')
+    expect(call.body.tools).toEqual([
+      { type: 'web_search_20250305', name: 'web_search', max_uses: 3 },
+    ])
   })
 
   // The indexing docs show custom_fields as an opaque {}, and the model fills it with
@@ -559,12 +574,19 @@ describe('POST /api/exports/schema-lookup', () => {
 
   it('concatenates every text block, ignoring the tool-use blocks between them', async () => {
     stub.on(ANTHROPIC, () => new Response(JSON.stringify({
+      id: 'msg_stub',
+      type: 'message',
+      role: 'assistant',
+      model: 'claude-stub',
       content: [
         { type: 'text', text: '{"systemName":"X",' },
-        { type: 'server_tool_use', name: 'web_search', input: {} },
+        { type: 'server_tool_use', id: 'srvtoolu_1', name: 'web_search', input: {} },
         { type: 'text', text: '"sample":{"a":1}}' },
       ],
-    }), { status: 200 }))
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: { input_tokens: 1, output_tokens: 1 },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const res = await app.request('/api/exports/schema-lookup', json({ name: 'x' }))
     expect(await res.json() as any).toMatchObject({ systemName: 'X', fields: ['a'] })
   })
@@ -598,7 +620,7 @@ describe('POST /api/exports/schema-from-url', () => {
     expect(body.fields.sort()).toEqual(['price', 'sku'])
 
     // the page text handed to the model has the markup, styles and scripts removed
-    const text = stub.callsTo(ANTHROPIC)[0].body.messages[0].content
+    const text = sentMessage(stub.callsTo(ANTHROPIC)[0])
     expect(text).toContain('sku is the identifier')
     expect(text).not.toContain('<h1>')
     expect(text).not.toContain('var x=1')
@@ -650,5 +672,139 @@ describe('POST /api/exports/schema-from-url', () => {
     const res = await app.request('/api/exports/schema-from-url', json({}))
     expect(res.status).toBe(400)
     expect(await res.json() as any).toEqual({ error: 'url required' })
+  })
+})
+
+// ── Provider routing ──────────────────────────────────────────────────────────
+// The route is config, the endpoint and credentials are env, and nothing in api.ts names a
+// hostname. These drive the same two routes end to end (a text call and an image call) and
+// assert where the request actually went, which model ID went with it, and which key was
+// used — the parts a misconfiguration would get wrong silently and expensively.
+describe('provider routing', () => {
+  const OPENROUTER = /openrouter\.ai/
+
+  beforeEach(() => {
+    writeFixtureFile(ws, 'algolia-tile.json', [item({ objectID: 'tile-001', name: 'Zellige' })])
+  })
+  afterEach(() => {
+    clearConfig(ws)
+    delete process.env.OPENROUTER_API_KEY
+    delete process.env.LLM_BASE_URL
+    delete process.env.LLM_API_KEY
+  })
+
+  it('sends the bare model name to the vendor on the direct route', async () => {
+    writeConfig(ws, { provider: 'direct', textModelFast: 'anthropic/claude-haiku-4-5' })
+    stub.on(ANTHROPIC, () => anthropicText('a prompt'))
+    expect((await app.request('/api/tile-001/enrich', json({}))).status).toBe(200)
+
+    const call = stub.callsTo(ANTHROPIC)[0]
+    expect(call.url).toBe('https://api.anthropic.com/v1/messages')
+    expect(call.body.model).toBe('claude-haiku-4-5')   // prefix stripped
+    expect(call.headers['x-api-key']).toBe('test-anthropic-key')
+  })
+
+  it('routes text through OpenRouter with the qualified model ID', async () => {
+    process.env.OPENROUTER_API_KEY = 'test-openrouter-key'
+    writeConfig(ws, { provider: 'openrouter', textModelFast: 'anthropic/claude-haiku-4.5' })
+    stub.on(OPENROUTER, () => openaiChat('a prompt'))
+    expect((await app.request('/api/tile-001/enrich', json({}))).status).toBe(200)
+
+    const call = stub.callsTo(OPENROUTER)[0]
+    expect(call.url).toBe('https://openrouter.ai/api/v1/chat/completions')
+    expect(call.body.model).toBe('anthropic/claude-haiku-4.5')  // qualified, passed through
+    expect(call.headers.authorization).toBe('Bearer test-openrouter-key')
+    expect(stub.callsTo(ANTHROPIC)).toHaveLength(0)             // and never the vendor directly
+  })
+
+  it('routes image generation through OpenRouter too', async () => {
+    process.env.OPENROUTER_API_KEY = 'test-openrouter-key'
+    writeConfig(ws, { provider: 'openrouter', imageModel: 'openai/gpt-image-1' })
+    stub.on(OPENROUTER, () => openaiImage(nearWhite))
+    expect((await app.request('/api/tile-001/generate', json({}))).status).toBe(200)
+
+    const call = stub.callsTo(OPENROUTER)[0]
+    expect(call.body.model).toBe('openai/gpt-image-1')
+    expect(stub.callsTo(OPENAI)).toHaveLength(0)
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(true)
+  })
+
+  it('sends an OpenAI-compatible route at LLM_BASE_URL, and refuses without one', async () => {
+    writeConfig(ws, { provider: 'compatible', textModelFast: 'local/mistral-small' })
+
+    // LLM_BASE_URL is env-only and has no default — an unset one must fail loudly rather
+    // than quietly falling back to a vendor the operator didn't choose. No handler is
+    // registered on purpose: the empty call list below is the proof nothing was attempted.
+    const missing = await app.request('/api/tile-001/enrich', json({}))
+    expect(missing.status).toBe(500)
+    expect((await missing.json() as any).error).toContain('LLM_BASE_URL')
+    expect(stub.calls).toHaveLength(0)
+
+    process.env.LLM_BASE_URL = 'https://proxy.internal/v1'
+    process.env.LLM_API_KEY = 'test-proxy-key'
+    stub.on(/proxy\.internal/, () => openaiChat('a prompt'))
+    expect((await app.request('/api/tile-001/enrich', json({}))).status).toBe(200)
+
+    const call = stub.callsTo(/proxy\.internal/)[0]
+    expect(call.url).toBe('https://proxy.internal/v1/chat/completions')
+    expect(call.body.model).toBe('local/mistral-small')
+    expect(call.headers.authorization).toBe('Bearer test-proxy-key')
+  })
+
+  it('names the missing key rather than failing at the network', async () => {
+    writeConfig(ws, { provider: 'openrouter', textModelFast: 'anthropic/claude-haiku-4.5' })
+    const res = await app.request('/api/tile-001/enrich', json({}))
+    expect(res.status).toBe(500)
+    expect((await res.json() as any).error).toBe('OPENROUTER_API_KEY not set')
+    expect(stub.calls).toHaveLength(0)
+  })
+
+  it('refuses a vendor the direct route cannot construct', async () => {
+    writeConfig(ws, { provider: 'direct', textModelFast: 'mistral/mistral-small' })
+    const res = await app.request('/api/tile-001/enrich', json({}))
+    expect(res.status).toBe(500)
+    expect((await res.json() as any).error).toContain('only knows openai/* and anthropic/*')
+    expect(stub.calls).toHaveLength(0)
+  })
+
+  // The app is meant to run against a single provider. That works for every route except
+  // one combination: Anthropic has no image models at all, so anthropic-direct alone can
+  // generate copy but not pictures. The failure has to name that, not just report a
+  // missing model — the operator's fix is a different route or an openai/* image model,
+  // and "No such imageModel" doesn't point at either.
+  it('says plainly that Anthropic cannot generate images', async () => {
+    writeConfig(ws, { provider: 'direct', imageModel: 'anthropic/claude-opus-5' })
+    const res = await app.request('/api/tile-001/generate', json({}))
+    expect(res.status).toBe(500)
+    const { error } = await res.json() as any
+    expect(error).toContain('anthropic')
+    expect(error).toMatch(/image/i)
+    expect(stub.calls).toHaveLength(0)
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(false)
+  })
+
+  // The other half of "one provider is enough": OpenAI alone covers both text and images.
+  it('runs text through OpenAI alone on the direct route', async () => {
+    delete process.env.ANTHROPIC_API_KEY
+    writeConfig(ws, { provider: 'direct', textModelFast: 'openai/gpt-4o-mini' })
+    // Directly against OpenAI the SDK uses the Responses API, not chat completions —
+    // unlike the aggregator routes, which speak chat completions whatever is behind them.
+    stub.on(OPENAI, () => openaiResponses('a prompt'))
+    expect((await app.request('/api/tile-001/enrich', json({}))).status).toBe(200)
+    const call = stub.callsTo(OPENAI)[0]
+    expect(call.url).toBe('https://api.openai.com/v1/responses')
+    expect(call.body.model).toBe('gpt-4o-mini')
+  })
+
+  // Anthropic's server-side web search has no equivalent on the aggregator routes. Failing
+  // with a plain explanation is the point: the alternative is a call that comes back
+  // confidently having searched nothing, which is worse than no answer.
+  it('explains that web-search schema lookup needs the direct Anthropic route', async () => {
+    process.env.OPENROUTER_API_KEY = 'test-openrouter-key'
+    writeConfig(ws, { provider: 'openrouter', textModel: 'anthropic/claude-sonnet-4.5' })
+    const res = await app.request('/api/exports/schema-lookup', json({ name: 'BigCommerce' }))
+    expect(res.status).toBe(500)
+    expect((await res.json() as any).error).toContain('"direct" provider route')
+    expect(stub.calls).toHaveLength(0)
   })
 })

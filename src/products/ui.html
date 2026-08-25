@@ -655,25 +655,37 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       </div>
 
       <!-- Image URL -->
-      <!-- Model -->
+      <!-- Models & provider -->
       <div style="background:var(--white);border:1px solid var(--hairline);border-radius:6px;padding:20px">
-        <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px">Image generation model</div>
+        <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px">Models</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">
-          OpenAI model used for generating product images.
+          Which models to use, and how to reach them. Model IDs are <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">provider/name</code>
+          — on the direct route the prefix picks the vendor, on the others it's passed through as-is.
+          Endpoints and API keys are set in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code>, not here.
+        </div>
+        <div class="form-row">
+          <label>Access via</label>
+          <select id="sProvider" onchange="_renderRouteKeys()"></select>
+        </div>
+        <div class="form-row">
+          <label>Text model</label>
+          <input type="text" id="sTextModel" placeholder="anthropic/claude-opus-5" spellcheck="false">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Batch item generation, export-map drafting, schema lookup.</div>
+        </div>
+        <div class="form-row">
+          <label>Fast text model</label>
+          <input type="text" id="sTextModelFast" placeholder="anthropic/claude-haiku-4-5" spellcheck="false">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Short, high-volume calls — image prompts and one-line descriptions.</div>
         </div>
         <div style="display:flex;gap:8px;align-items:flex-end">
           <div class="form-row" style="flex:1">
-            <label>Model</label>
-            <select id="sModel">
-              <option value="gpt-image-1">gpt-image-1</option>
-              <option value="gpt-image-2">gpt-image-2</option>
-              <option value="dall-e-3">dall-e-3</option>
-              <option value="dall-e-2">dall-e-2</option>
-            </select>
+            <label>Image model</label>
+            <input type="text" id="sImageModel" placeholder="openai/gpt-image-1" spellcheck="false">
           </div>
-          <button class="btn btn-solid" onclick="saveModel()" style="flex-shrink:0;margin-bottom:0">Save</button>
+          <button class="btn btn-solid" id="sSaveModels" onclick="saveModels()" style="flex-shrink:0;margin-bottom:0">Save</button>
         </div>
         <div id="sModelMsg" style="font-size:11px;color:var(--green);margin-top:6px;display:none">Saved</div>
+        <div id="sModelErr" style="font-size:11px;color:var(--red);margin-top:6px;display:none"></div>
       </div>
 
       <!-- Landing page mode -->
@@ -696,16 +708,9 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       <!-- API keys status -->
       <div style="background:var(--white);border:1px solid var(--hairline);border-radius:6px;padding:20px">
         <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:12px">API keys</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px">Anthropic (Claude)</span>
-            <span id="sAnthropicKey" style="font-size:11px;font-weight:600"></span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px">OpenAI (image generation)</span>
-            <span id="sOpenaiKey" style="font-size:11px;font-weight:600"></span>
-          </div>
-        </div>
+        <!-- Only the keys the selected route actually uses — an "OpenAI key missing"
+             warning is noise when everything is going through OpenRouter. -->
+        <div id="sRouteKeys" style="display:flex;flex-direction:column;gap:8px"></div>
         <div style="font-size:11px;color:var(--muted);margin-top:12px">Set in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code> — requires container restart to take effect.</div>
       </div>
 
@@ -1238,7 +1243,7 @@ function renderDetail() {
           <button class="btn btn-solid" id="genBtn" onclick="generateCurrent()">
             ${item.hasImage && !item.isExternalImage ? '↺ Regenerate' : '▶ Generate Image'}
           </button>
-          <span style="font-size:10px;color:var(--muted);margin-left:2px">via <code style="font-size:10px;background:var(--stone);padding:1px 5px;border-radius:3px">${escHtml(config.model || 'gpt-image-1')}</code></span>
+          <span style="font-size:10px;color:var(--muted);margin-left:2px">via <code style="font-size:10px;background:var(--stone);padding:1px 5px;border-radius:3px">${escHtml(config.imageModel || 'openai/gpt-image-1')}</code></span>
         </div>
         ${item.hasImage && !item.isExternalImage ? `
         <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
@@ -3276,17 +3281,26 @@ async function createBlankMap() {
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────
+// The route list comes from the server rather than being hardcoded here, so adding a
+// provider route in api.ts lights it up in this dropdown with no change to this file.
+let _routes = []
+
 async function _loadSettingsTab() {
   try {
     const s = await fetch('/api/settings').then(r => r.json())
     document.getElementById('sCatalogPath').value  = s.catalogPath  ?? ''
     document.getElementById('sImagesPath').value   = s.imagesPath   ?? ''
-    const modelEl = document.getElementById('sModel')
-    if (modelEl) modelEl.value = s.model ?? 'gpt-image-1'
-    const ok  = '<span style="color:var(--green)">✓ configured</span>'
-    const bad = '<span style="color:var(--red)">✗ missing</span>'
-    document.getElementById('sAnthropicKey').innerHTML = s.anthropicKey ? ok : bad
-    document.getElementById('sOpenaiKey').innerHTML    = s.openaiKey    ? ok : bad
+
+    _routes = s.routes ?? []
+    const providerEl = document.getElementById('sProvider')
+    providerEl.innerHTML = _routes
+      .map(r => `<option value="${escHtml(r.key)}">${escHtml(r.label)}</option>`).join('')
+    providerEl.value = s.provider ?? 'direct'
+
+    document.getElementById('sTextModel').value     = s.textModel     ?? ''
+    document.getElementById('sTextModelFast').value = s.textModelFast ?? ''
+    document.getElementById('sImageModel').value    = s.imageModel    ?? ''
+    _renderRouteKeys()
   } catch (err) {
     console.error('Settings load failed:', err)
   }
@@ -3429,15 +3443,45 @@ async function saveSiteBasePrompt(siteId) {
   toast('Base prompt saved', 'success')
 }
 
-async function saveModel() {
-  const val = document.getElementById('sModel')?.value
-  if (!val) return
+// Shows a configured/missing line per env key the *selected* route needs. Re-runs on
+// change so switching the dropdown immediately tells you whether that route can work,
+// before you save it and find out on the next billed call.
+function _renderRouteKeys() {
+  const el = document.getElementById('sRouteKeys')
+  if (!el) return
+  const selected = document.getElementById('sProvider')?.value
+  const route = _routes.find(r => r.key === selected)
+  if (!route) { el.innerHTML = ''; return }
+  const ok  = '<span style="color:var(--green)">✓ configured</span>'
+  const bad = '<span style="color:var(--red)">✗ missing</span>'
+  el.innerHTML = Object.entries(route.keys).map(([name, present]) => `
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px"><code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">${escHtml(name)}</code></span>
+      <span style="font-size:11px;font-weight:600">${present ? ok : bad}</span>
+    </div>`).join('')
+}
+
+async function saveModels() {
+  const patch = {
+    provider:      document.getElementById('sProvider').value,
+    textModel:     document.getElementById('sTextModel').value.trim(),
+    textModelFast: document.getElementById('sTextModelFast').value.trim(),
+    imageModel:    document.getElementById('sImageModel').value.trim(),
+  }
+  const err = document.getElementById('sModelErr')
   const res = await fetch('/api/config', {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ model: val }),
+    body: JSON.stringify(patch),
   })
-  if (!res.ok) { toast('Error: could not save model'); return }
-  config.model = val
+  // The server validates the route name and the model-ID shape; show what it said rather
+  // than a generic failure, since a rejected value here is almost always a typo.
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    if (err) { err.textContent = body.error ?? 'Could not save models'; err.style.display = 'block' }
+    return
+  }
+  if (err) err.style.display = 'none'
+  Object.assign(config, patch)
   const msg = document.getElementById('sModelMsg')
   if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000) }
 }

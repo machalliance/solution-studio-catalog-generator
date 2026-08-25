@@ -191,15 +191,51 @@ describe('error handling', () => {
 describe('GET /api/config and /api/settings', () => {
   it('returns the defaults before anything is saved', async () => {
     const cfg = await (await app.request('/api/config')).json() as any
-    expect(cfg).toMatchObject({ model: 'gpt-image-1', landingDemoMode: false })
+    expect(cfg).toMatchObject({
+      provider: 'direct',
+      imageModel: 'openai/gpt-image-1',
+      textModel: 'anthropic/claude-opus-5',
+      textModelFast: 'anthropic/claude-haiku-4-5',
+      landingDemoMode: false,
+    })
     expect(cfg.basePromptClothing).toContain('{item}')
   })
 
   it('merges a saved patch over the defaults', async () => {
-    const res = await app.request('/api/config', json({ model: 'dall-e-3' }))
+    const res = await app.request('/api/config', json({ imageModel: 'openai/dall-e-3' }))
     expect(res.status).toBe(200)
-    expect((await res.json() as any).config).toMatchObject({ model: 'dall-e-3', landingDemoMode: false })
-    expect((await (await app.request('/api/config')).json() as any).model).toBe('dall-e-3')
+    expect((await res.json() as any).config).toMatchObject({ imageModel: 'openai/dall-e-3', landingDemoMode: false })
+    expect((await (await app.request('/api/config')).json() as any).imageModel).toBe('openai/dall-e-3')
+  })
+
+  // A pre-provider config.json holds a bare, unqualified OpenAI image model. It has to keep
+  // working across the upgrade — silently reverting someone's chosen model to the default
+  // would be invisible until their next (billed) generation came back looking wrong.
+  it('reads a legacy unqualified `model` forward into imageModel', async () => {
+    writeFileSync(ws.configPath, JSON.stringify({ model: 'dall-e-2' }))
+    const cfg = await (await app.request('/api/config')).json() as any
+    expect(cfg.imageModel).toBe('openai/dall-e-2')
+    expect(cfg.model).toBeUndefined()
+  })
+
+  it('rejects a provider route outside the known set, and a malformed model ID', async () => {
+    rmSync(ws.configPath, { force: true })   // config.json survives beforeEach — start from defaults
+
+    // The security-relevant half: this route is unauthenticated, so an arbitrary provider
+    // value must never reach the resolver — a URL here would redirect billed calls, and the
+    // API key with them.
+    for (const bad of ['https://evil.example/v1', 'nonsense', '']) {
+      const res = await app.request('/api/config', json({ provider: bad }))
+      expect(res.status).toBe(400)
+    }
+    const malformed = await app.request('/api/config', json({ imageModel: 'gpt-image-1' }))
+    expect(malformed.status).toBe(400)
+    expect((await malformed.json() as any).error).toContain('<provider>/<name>')
+
+    // and none of it was persisted
+    const cfg = await (await app.request('/api/config')).json() as any
+    expect(cfg.provider).toBe('direct')
+    expect(cfg.imageModel).toBe('openai/gpt-image-1')
   })
 
   it('reports which keys are configured without disclosing them', async () => {
