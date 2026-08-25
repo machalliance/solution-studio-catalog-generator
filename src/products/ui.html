@@ -33,7 +33,8 @@ nav {
 .nav-brand { align-self: center; display: flex; align-items: center; margin-right: 10px; }
 .nav-brand img { height: 20px; width: auto; display: block; }
 .nav-brand-sep { align-self: center; width: 1px; height: 18px; background: rgba(255,255,255,0.18); margin-right: 10px; }
-.nav-logo { font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: white; letter-spacing: -0.02em; align-self: center; margin-right: 8px; white-space: nowrap; cursor: pointer; }
+.nav-logo { font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: white; letter-spacing: -0.02em; align-self: center; margin-right: 8px; white-space: nowrap; cursor: pointer;
+  background: none; border: none; padding: 0; }
 .nav-logo span { color: rgba(255,255,255,0.4); font-weight: 400; }
 .nav-site-select {
   align-self: center; margin-right: 16px; font-family: var(--font); font-size: 11.5px; font-weight: 500;
@@ -41,7 +42,16 @@ nav {
   border-radius: 20px; padding: 4px 10px; cursor: pointer; outline: none; max-width: 160px;
 }
 .nav-site-select:hover { background: rgba(255,255,255,0.14); }
+.nav-site-select:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: 2px; }
 .nav-site-select option { background: #1a1a17; color: white; }
+.skip-link {
+  position: absolute; left: 8px; top: -60px; z-index: 100;
+  background: var(--brand-yellow); color: var(--ink); font-family: var(--font-display);
+  font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: var(--radius);
+  text-decoration: none; transition: top 0.15s;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--ink); outline-offset: 2px; }
+[tabindex="-1"]:focus { outline: none; }
 .nav-tabs { display: flex; align-items: stretch; flex: 1; }
 .tab-btn {
   font-family: var(--font-display); font-size: 12px; font-weight: 500;
@@ -52,6 +62,13 @@ nav {
 }
 .tab-btn:hover { color: rgba(255,255,255,0.92); }
 .tab-btn.active { color: white; border-bottom-color: var(--brand-yellow); }
+/* Tabs sit flush against each other, so their ring goes inside; the brand link and logo
+   have room around them, so theirs sits outside where it reads at full contrast against
+   the dark bar (a -2px offset drew over the logo artwork and measured ~1.8:1). */
+.tab-btn:focus-visible { outline: 2px solid var(--brand-yellow); outline-offset: -2px; }
+.nav-logo:focus-visible, .nav-brand:focus-visible {
+  outline: 2px solid var(--brand-yellow); outline-offset: 2px; border-radius: 2px;
+}
 .tab-settings { margin-left: auto; padding: 0 18px; font-size: 15px; }
 
 /* PRODUCTS TOOLBAR */
@@ -142,7 +159,8 @@ nav {
 
 #devView .section-label { font-family: 'JetBrains Mono'; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dv-muted); margin: 40px 0 14px; }
 #devView .sites-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-#devView .site-card { background: var(--dv-white); border: 1px solid var(--dv-hairline); border-radius: 8px; padding: 16px 18px; text-decoration: none; color: inherit; cursor: pointer; }
+#devView .site-card { background: var(--dv-white); border: 1px solid var(--dv-hairline); border-radius: 8px; padding: 16px 18px; text-decoration: none; color: inherit; cursor: pointer;
+  display: block; width: 100%; text-align: left; font: inherit; }
 #devView .site-card:hover { border-color: var(--brand-yellow); }
 #devView .site-card-id { font-family: 'JetBrains Mono'; font-size: 11px; color: var(--dv-accent); }
 #devView .site-card-label { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-top: 4px; }
@@ -480,18 +498,21 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 </style>
 </head>
 <body>
+<!-- 2.4.1 — first thing in the tab order, visible only while focused, so a keyboard user
+     can jump the nav instead of tabbing through it on every view change. -->
+<a class="skip-link" href="#gridPanel" onclick="event.preventDefault();_focusActiveMain()">Skip to main content</a>
 
 <div class="toast-stack" id="toastStack"></div>
 
 <div class="lightbox" id="lightbox">
-  <button class="lightbox-close" title="Close">×</button>
+  <button class="lightbox-close" title="Close" aria-label="Close"><span aria-hidden="true">×</span></button>
   <img id="lightboxImg" src="" alt="">
 </div>
 
-<nav>
+<nav aria-label="Main">
   <a class="nav-brand" href="https://machalliance.org/" target="_blank" rel="noopener noreferrer" title="MACH Alliance"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODcuMSAxNzYuMiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmZmZmY7fS5jbHMtMntmaWxsOiNmZmNiMWI7fTwvc3R5bGU+PC9kZWZzPjxnIGlkPSJMYXllcl8xLTIiPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMwLjk4LDE3MC4xMWgtMTQuOTFsLTIuNTYsNS4ySDUuMTlsMTQuMDYtMjcuMThoOC42NmwxNC4wNiwyNy4xOGgtOC40M2wtMi41Ni01LjJaTTI4LjIyLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODguMjUsMTY4Ljk0djYuMzdoLTI2LjIxdi0yNy4xOGg3LjkydjIwLjgxaDE4LjI5WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEzNC45OCwxNjguOTR2Ni4zN2gtMjYuMjF2LTI3LjE4aDcuOTJ2MjAuODFoMTguMjlaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTU1LjUsMTc1LjMxdi0yNy4xOGg3LjkydjI3LjE4aC03LjkyWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTIwOS4yNiwxNzAuMTFoLTE0LjkxbC0yLjU2LDUuMmgtOC4zMWwxNC4wNi0yNy4xOGg4LjY2bDE0LjA2LDI3LjE4aC04LjQzbC0yLjU2LTUuMlpNMjA2LjUxLDE2NC40OGwtNC43LTkuNjMtNC43NCw5LjYzaDkuNDRaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjcyLjQ3LDE0OC4xM3YyNy4xOGgtNi45NWwtMTcuNTUtMTcuODZ2MTcuODZoLTcuNjV2LTI3LjE4aDguMzlsMTYuMTEsMTYuNjJ2LTE2LjYyaDcuNjVaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzE5LjkzLDE2NS42bDYuOCwzLjVjLTIuNTMsNC04LDcuMTEtMTUuMzQsNy4xMS0xMC4yNSwwLTE3LjE2LTUuMzItMTcuMTYtMTQuNDhzNi45MS0xNC40OCwxNy40Ny0xNC40OGM3LjAzLDAsMTIuNDcsMy4xOCwxNC45MSw3LjA3bC02LjgzLDMuNDljLTEuNzktMi43OS00LjU0LTQuMTEtOC4xOS00LjExLTUuNTksMC05LjMyLDIuODMtOS4zMiw4LjA0czMuNzMsOC4wNCw5LjMyLDguMDRjMy42NSwwLDYuNDUtMS4yNCw4LjM1LTQuMTZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzc2LjU4LDE2OS4yNXY2LjA2aC0yOXYtMjcuMThoMjguNTh2Ni4wNmgtMjAuNzd2NC40NmgxNy4xMnY1Ljc5aC0xNy4xMnY0LjgxaDIxLjJaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzg3LjEsNy4yOGwtNS4yNi01LjI2aDBzMCwwLDAsMGgtMjguNjZ2NjEuMjdoLTQ1LjY1VjcuMjhsLTUuMjYtNS4yNmgtMjguNjR2Ny45NWMtNy41OS00LjY3LTE2LjI5LTcuNDQtMjUuNTgtOC4wMWgtNi43MWMtMTEuNTYuNzMtMjIuNDIsNS4wMy0zMS40LDEyLjQyLTkuNTUsNy44Ni0xNi4wNSwxOC41My0xOC43LDMwLjMzbC0yMi43OC0zOS40NS01LjI2LTUuMjYtMzYuNjMsNjMuNDNWNy4xMWwtNS4yNi01LjI2aC0yNi40MWwtMzMuMTMsNTcuMzdMMzEuNjksNy4xMWgwcy01LjI2LTUuMjYtNS4yNi01LjI2aDBzMCwwLDAsMEgwdjEwOS44OWw1LjI2LDUuMjZoMjguNjR2LTQ5Ljc3bDI2Ljc3LDQ2LjM2LDUuMjYsNS4yNywyNi43Ny00Ni4zN3YzOS4yNmw1LjI2LDUuMjZoMzYuMjdsMTEuNDgtMTkuODhoNDMuM2w4LjQ0LDE0LjYyLDUuMjYsNS4yNmgzMC4yOGwtMi0zLjQ3YzYuMDksMi4yNiwxMi41NywzLjQ3LDE5LjE0LDMuNDcsOC4yMiwwLDE2LjIyLTEuODksMjMuNTEtNS4zNHYuMDloMGw1LjI2LDUuMjZoMHMyOC42NCwwLDI4LjY0LDB2LTE5LjgxaDQ1LjY1djE0LjU1bDUuMjYsNS4yNmgyOC42NlY3LjI4aDBaTTE2NS4yNyw2My4yM2wyLjA5LTMuNjEsMi4wOSwzLjYxaC00LjE3Wk0yNzMuNjIsNzkuMDFsLTguNDUtNC44OC0yLjg0LDIuNTJjLTQuODIsNC4yNy0xMS4wMyw2LjYzLTE3LjQ4LDYuNjMtNi4wMywwLTExLjU3LTIuMTQtMTYuMDQtNS42LTIuODYtMy45LTQuNjgtOC42Mi01LjAyLTEzLjc2LS4wNC0uNTktLjA3LTEuMTgtLjA3LTEuNzdzLjAyLTEuMTkuMDctMS44MmMuOTItMTMuNzgsMTIuNDktMjQuNTgsMjYuMzItMjQuNTgsNi40MywwLDEyLjYzLDIuMzQsMTcuNDUsNi41OWwyLjg0LDIuNSwzLjIyLTEuODZ2MzYuMDNaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzU4LjQzLDcuMjh2NjEuMjdoLTYxLjQzVjcuMjhoLTE4LjEydjEzLjMzYy04LjE2LTcuNjgtMTguOTItMTIuNjUtMzAuODQtMTMuNGgtNi4zOGMtMTAuNzUuNjctMjAuNTUsNC43OC0yOC4zOCwxMS4yMi0xMS4wNiw5LjExLTE4LjEyLDIyLjkxLTE4LjEyLDM4LjM2LDAsMy44OS40NSw3LjY3LDEuMywxMS4zbC0yNC4xOS00MS44OS05LjA3LTE1LjctOS4wNywxNS43LTI0LjQyLDQyLjI4LTEwLjQ1LDE4LjExLTMuMjEsNS41N1Y3LjExaC0xOC4xMmwtMzcuMjcsNjQuNTVMMjMuMzksNy4xMUg1LjI2djk5LjM3aDE4LjEyVjM4LjQ5bDI4LjIyLDQ4Ljg4LDkuMDcsMTUuNyw5LjA3LTE1LjcsMjguMjItNDguOXY2OGgyNy45OGwxMS40Ny0xOS44OGg1MS42bDExLjQ3LDE5Ljg4aDE4LjEzbC03Ljg4LTEzLjY2Yy44NC44LDEuNjYsMS42MSwyLjU2LDIuMzUsOC42LDcuMDgsMTkuNTksMTEuMzEsMzEuNTcsMTEuMzEsMTMuMTgsMCwyNS4xMy01LjE2LDM0LjAyLTEzLjUzdjEzLjUzaDE4LjEydi0xOS44MWg2MS40M3YxOS44MWgxOC4xNVY3LjI4aC0xOC4xNVpNMTQ3Ljg2LDY4LjQ5bDE1LjM1LTI2LjU3LDE1LjM1LDI2LjU3aC0zMC43Wk0yNjUuODMsODAuNThjLTUuNTgsNC45NS0xMi45Myw3Ljk1LTIwLjk3LDcuOTUtMTYuNzYsMC0zMC40Ny0xMy4wMi0zMS41Ny0yOS40OS0uMDUtLjcxLS4wOC0xLjQ0LS4wOC0yLjE3cy4wMy0xLjQ1LjA4LTIuMTdjMS4xLTE2LjQ4LDE0LjgxLTI5LjQ5LDMxLjU3LTI5LjQ5LDguMDMsMCwxNS4zNSwyLjk5LDIwLjkzLDcuOTFsMTMuMDktNy41NnY2Mi41NGwtMTMuMDUtNy41NFoiLz48L2c+PC9zdmc+" alt="MACH Alliance"></a>
   <span class="nav-brand-sep" aria-hidden="true"></span>
-  <span class="nav-logo" onclick="showLanding()" title="Home">Product Catalog Generator</span>
+  <button type="button" class="nav-logo" onclick="showLanding()">Product Catalog Generator</button>
   <select class="nav-site-select" id="currentSiteSelect" onchange="setCurrentSite(this.value)" title="Catalog you're currently working on — sets where new items are added and which categories export offers"></select>
   <div class="nav-tabs">
     <button class="tab-btn" id="tab-products"  onclick="setTab('products')">Products</button>
@@ -499,7 +520,8 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     <button class="tab-btn"        id="tab-snapshots" onclick="setTab('snapshots')">Snapshots</button>
   </div>
   <div class="nav-help-wrap">
-    <button class="tab-btn tab-help" id="howItWorksBtn" onclick="toggleHowItWorks(event)" title="How it works">?</button>
+    <button class="tab-btn tab-help" id="howItWorksBtn" onclick="toggleHowItWorks(event)"
+      title="How it works" aria-label="How it works"><span aria-hidden="true">?</span></button>
     <div class="how-it-works-panel" id="howItWorksPanel">
       <div class="hiw-title">How it works</div>
       <div class="hiw-step"><span class="info-step-num n1">1</span><div><strong>Add items</strong><br>Click + New Item, or pick an existing item from the grid</div></div>
@@ -508,7 +530,8 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       <div class="hiw-step"><span class="info-step-num n4">4</span><div><strong>Generate image</strong><br>Via OpenAI</div></div>
     </div>
   </div>
-  <button class="tab-btn tab-settings" id="tab-settings" onclick="setTab('settings')" title="Settings">⚙</button>
+  <button class="tab-btn tab-settings" id="tab-settings" onclick="setTab('settings')"
+    title="Settings" aria-label="Settings"><span aria-hidden="true">⚙</span></button>
 </nav>
 
 <div id="productsToolbar" class="products-toolbar">
@@ -516,7 +539,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   <button class="toolbar-btn" onclick="showCreator('batch')"><svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>Batch Add</button>
 </div>
 
-<div id="landingView">
+<div id="landingView" role="region" aria-label="Home">
   <!-- Dev view (default) -->
   <div id="devView">
     <div class="wrap">
@@ -573,14 +596,14 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
     <div id="siteGroups"></div>
   </aside>
 
-  <main class="grid-panel" id="gridPanel">
+  <main class="grid-panel" id="gridPanel" aria-label="Products">
     <div class="empty">Select a category</div>
   </main>
 
   <aside class="detail" id="detailPanel"></aside>
 </div>
 
-<div class="backups-view" id="backupsView">
+<div class="backups-view" id="backupsView" role="region" aria-label="Snapshots">
   <div class="backups-content">
     <div class="backups-header">
       <h2>Snapshots</h2>
@@ -596,7 +619,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
 
 <div id="creatorPanel" class="creator-panel"></div>
 
-<div class="backups-view" id="exportsView" style="display:none">
+<div class="backups-view" id="exportsView" role="region" aria-label="Exports" style="display:none">
   <div class="exports-layout">
 
     <!-- Left: map list -->
@@ -623,7 +646,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
   </div>
 </div>
 
-<div class="backups-view" id="settingsView">
+<div class="backups-view" id="settingsView" role="region" aria-label="Settings">
   <div class="backups-content">
     <div class="backups-header">
       <h2>Settings</h2>
@@ -696,7 +719,7 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
           </div>
           <button class="btn btn-solid" id="sSaveModels" onclick="saveModels()" style="flex-shrink:0;margin-bottom:0">Save</button>
         </div>
-        <div id="sModelMsg" role="status" style="font-size:11px;color:var(--green);margin-top:6px;display:none">Saved</div>
+        <div id="sModelMsg" role="status" style="font-size:11px;color:var(--green);margin-top:6px;display:none"></div>
         <div id="sModelErr" role="alert" style="font-size:11px;color:var(--red);margin-top:6px;display:none"></div>
       </div>
 
@@ -937,13 +960,17 @@ function renderLanding() {
     const cats = allData.filter(g => g.skin === site.id)
     const total = cats.reduce((n, g) => n + g.items.length, 0)
     const firstCat = site.categories[0]
-    const onclick = firstCat ? ` onclick='selectCategoryByName("${site.id}","${firstCat}")'` : ''
-    return `
-      <a class="site-card"${onclick} style="${firstCat ? '' : 'cursor:default'}">
+    const meta = total ? `${total} products · ${cats.length} categories` : 'No categories yet — add one in Settings'
+    const body = `
         <div class="site-card-id">${escHtml(site.id)}</div>
         <div class="site-card-label">${escHtml(site.label)}</div>
-        <div class="site-card-meta">${total ? `${total} products · ${cats.length} categories` : 'No categories yet — add one in Settings'}</div>
-      </a>`
+        <div class="site-card-meta">${meta}</div>`
+    // The name has to say what activating the card does — "Home" alone, read out of
+    // context in a list of cards, doesn't.
+    return firstCat
+      ? `<button type="button" class="site-card" aria-label="Open catalog ${escHtml(site.label)} — ${escHtml(meta)}"
+                 onclick='selectCategoryByName("${site.id}","${firstCat}")'>${body}</button>`
+      : `<div class="site-card" style="cursor:default">${body}</div>`
   }).join('')
   document.getElementById('landingSitesSection').style.display = ''
   document.getElementById('landingActionsRow').style.display = ''
@@ -1229,7 +1256,7 @@ function renderDetail() {
       <div class="prompt-section">
         <div class="prompt-label">
           <label for="descTA">Description</label>
-          <span class="save-msg" id="descSaveMsg" role="status">Saved</span>
+          <span class="save-msg" id="descSaveMsg" role="status"></span>
         </div>
         <textarea id="descTA" rows="3">${escHtml(item.description || '')}</textarea>
         <div class="prompt-actions">
@@ -1241,7 +1268,7 @@ function renderDetail() {
       <div class="prompt-section">
         <div class="prompt-label">
           <label for="itemPromptTA">Image Query</label>
-          <span class="save-msg" id="itemSaveMsg" role="status">Saved</span>
+          <span class="save-msg" id="itemSaveMsg" role="status"></span>
         </div>
         <textarea id="itemPromptTA" rows="2">${escHtml(itemPrompt)}</textarea>
         <div class="prompt-actions">
@@ -1586,11 +1613,13 @@ function showGenError(msg) {
   el.classList.toggle('show', !!msg)
 }
 
-function flashMsg(id) {
+function flashMsg(id, text = 'Saved') {
   const el = document.getElementById(id)
   if (!el) return
+  // Set the text rather than just revealing it — see the 4.1.3 note in CLAUDE.md.
+  el.textContent = text
   el.classList.add('show')
-  setTimeout(() => el.classList.remove('show'), 2000)
+  setTimeout(() => { el.classList.remove('show'); el.textContent = '' }, 2000)
 }
 
 // Escapes the apostrophe too — several handlers below sit in single-quoted attributes
@@ -2270,6 +2299,29 @@ async function setTab(tab) {
   if (tab === 'exports')   await _loadExportsTab()
   if (tab === 'snapshots') loadBackups()
   if (tab === 'settings')  _loadSettingsTab()
+
+  _focusView({ products: 'gridPanel', exports: 'exportsView', snapshots: 'backupsView', settings: 'settingsView' }[tab])
+}
+
+// Sends focus into a view that has just been revealed. The container is only focusable
+// programmatically (tabindex="-1"), so this adds nothing to the tab order — it just moves
+// the insertion point, which is what makes a screen reader announce the new region and
+// what stops the next Tab from continuing along the nav bar instead of into the content.
+// The skip link can't point at one fixed id: which region is "main" depends on the tab,
+// and the others are display:none, so a plain #hash would land on a hidden element.
+function _focusActiveMain() {
+  const candidates = ['landingView', 'gridPanel', 'exportsView', 'backupsView', 'settingsView']
+  const visible = candidates
+    .map(id => document.getElementById(id))
+    .find(el => el && el.offsetParent !== null)
+  if (visible) _focusView(visible.id)
+}
+
+function _focusView(id) {
+  const el = id && document.getElementById(id)
+  if (!el) return
+  el.setAttribute('tabindex', '-1')
+  el.focus({ preventScroll: true })
 }
 
 async function _loadExportsTab() {
@@ -2446,7 +2498,7 @@ function renderMapEditor(map) {
           <button class="btn btn-solid" onclick="runExport('${escAttrJs(map.id)}')">⬇ Download</button>
         </div>
       </div>
-      <div id="emSaveMsg" style="font-size:11px;color:var(--green);margin-bottom:8px;display:none">Saved</div>
+      <div id="emSaveMsg" role="status" style="font-size:11px;color:var(--green);margin-bottom:8px;display:none"></div>
 
       <!-- Which categories to export — ad-hoc, scoped to the catalog picked in the nav
            switcher; not saved on the map, so one map stays reusable across catalogs. -->
@@ -3015,7 +3067,11 @@ async function saveMap() {
     body: JSON.stringify({ ...currentMap, targetSchema: toStoredSchema(currentMap.targetSchema) }),
   })
   const msg = document.getElementById('emSaveMsg')
-  if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000) }
+  if (msg) {
+    msg.textContent = 'Saved'
+    msg.style.display = 'block'
+    setTimeout(() => { msg.style.display = 'none'; msg.textContent = '' }, 2000)
+  }
   await loadExportMaps()
 }
 
@@ -3350,8 +3406,8 @@ function _catChipHtml(site, cat) {
   const title = removable ? `Remove "${cat}"` : `Remove its ${n} product${n > 1 ? 's' : ''} first`
   return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:monospace;background:var(--stone);border:1px solid var(--hairline);border-radius:20px;padding:2px 4px 2px 9px;margin:2px 4px 2px 0">
     ${escHtml(cat)}
-    <button onclick="removeCategoryFromSite('${site.id}','${cat}')" title="${title}" ${removable ? '' : 'disabled'}
-      style="font-family:var(--font);font-size:12px;line-height:1;width:16px;height:16px;border-radius:50%;border:none;background:none;cursor:${removable ? 'pointer' : 'not-allowed'};color:${removable ? 'var(--muted)' : 'var(--muted)'};padding:0">×</button>
+    <button onclick="removeCategoryFromSite('${site.id}','${cat}')" title="${title}" aria-label="${title}" ${removable ? '' : 'disabled'}
+      style="font-family:var(--font);font-size:12px;line-height:1;width:16px;height:16px;border-radius:50%;border:none;background:none;cursor:${removable ? 'pointer' : 'not-allowed'};color:${removable ? 'var(--muted)' : 'var(--muted)'};padding:0"><span aria-hidden="true">×</span></button>
   </span>`
 }
 
@@ -3374,6 +3430,7 @@ function _renderSitesSettings() {
       </div>
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px">
         <input type="text" id="sNewCat-${site.id}" placeholder="e.g. electronics-accessories"
+          aria-label="New category for ${escHtml(site.label)}"
           style="flex:1;font-size:12px;padding:6px 8px;border:1px solid var(--hairline);border-radius:4px;outline:none"
           onkeydown="if(event.key==='Enter'){event.preventDefault();addCategoryToSite('${site.id}')}">
         <button class="btn btn-ghost" onclick="addCategoryToSite('${site.id}')" style="flex-shrink:0;font-size:11px">+ Category</button>
@@ -3493,10 +3550,14 @@ async function saveModels() {
     if (err) { err.textContent = body.error ?? 'Could not save models'; err.style.display = 'block' }
     return
   }
-  if (err) err.style.display = 'none'
+  if (err && err.textContent) { err.style.display = 'none'; err.textContent = '' }
   Object.assign(config, patch)
   const msg = document.getElementById('sModelMsg')
-  if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2000) }
+  if (msg) {
+    msg.textContent = 'Saved'
+    msg.style.display = 'block'
+    setTimeout(() => { msg.style.display = 'none'; msg.textContent = '' }, 2000)
+  }
 }
 </script>
 </body>

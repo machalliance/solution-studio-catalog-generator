@@ -10,12 +10,11 @@ npm start              # same, no watch
 npm run typecheck      # tsc --noEmit (no build step exists; tsx runs TS directly)
 npm test               # vitest run  (test/**/*.test.ts, excludes test/e2e)
 npm run test:watch
-npm run test:e2e       # playwright (functional + accessibility); throwaway server on :3010
+npm run test:e2e       # playwright; starts its own throwaway server on :3010
 
 npx vitest run test/unit/ssrf.test.ts            # single file
 npx vitest run -t 'rejects v4-mapped loopback'   # single test by name
 npx playwright test test/e2e/ui.spec.ts --headed
-npx playwright test test/e2e/a11y.spec.ts        # axe, WCAG 2.1 A/AA — fails on any violation
 
 docker compose up --build                                  # the app, port 127.0.0.1:3004
 npm run test:docker        # vitest inside the container image
@@ -99,18 +98,26 @@ All outbound network calls go through global `fetch`, stubbed per-test by `insta
 
 ### Accessibility
 
-`test/e2e/a11y.spec.ts` runs axe over every view at **WCAG 2.1 A and AA**, and the suite fails on any violation — that is the bar, not a report to skim. The `best-practice` tag is deliberately excluded so a failure always means a real barrier.
+Audited with [`ezufelt/keyboard-a11y-tester`](https://github.com/ezufelt/keyboard-a11y-tester) — a keyboard-only + screen-reader persona driver, not a rule scanner. It is not a repo dependency; clone it and point it at a running instance:
 
-Since `ui.html` is hand-written markup with no component layer, nothing structurally prevents a regression. When adding UI:
+```bash
+node scripts/runner.mjs --url http://localhost:3004          # unattended crawl, both viewports
+node scripts/runner.mjs serve --url http://localhost:3004 --goal "..."   # interactive, one keystroke at a time
+```
 
-- Every control needs a programmatic name. The convention here is `<label for="...">` — a label that merely sits next to a control names nothing, and a `placeholder` satisfies axe while still disappearing the moment someone types.
-- Feedback that appears by unhiding an element needs `role="status"` (or `role="alert"` when it's an error), or it is silent to a screen reader.
-- Colour is never the only signal: state needs a word, and decorative glyphs get `aria-hidden="true"` so they aren't read out.
-- Colour tokens are contrast-checked. `--muted`, `--green`, `--red`, the code-card syntax colours and the inactive nav tabs were all raised to clear 4.5:1; don't reintroduce a lighter value without checking it against the background it actually lands on (`--stone`, not just white).
+Read its findings with judgment — the unattended crawl only visits the start page, so "live region never announced" means *not reached*, not *broken*. Confirm interactively before changing anything, and confirm a fix the same way.
 
-The spec also asserts things axe cannot see — that live regions carry the right role, that the key status reads without colour, and that the tab bar is keyboard-operable.
+Conventions this audit established, all of which a rule scanner passes straight over:
 
-Note the E2E specs share one server. `a11y.spec.ts` creates its own catalog with a category name no other spec uses (sharing one would trip the fixture-collision rename) and deletes it in `afterAll`.
+- **Anything clickable must be a real control.** A `<span onclick>` or an `<a>` with no `href` is not focusable and has no role — it is mouse-only, and that is a 2.1.1 blocker. Use `<button type="button">` and reset the UA styling.
+- **Text content beats `title` in the accessible-name calculation.** An icon button reading `⚙` or `×` announces as its glyph no matter what `title` says. Put the name in `aria-label` and mark the glyph `aria-hidden="true"`. Watch for repeated controls in a list — eight buttons all named "×" is a real barrier.
+- **A live region announces on content change, not on becoming visible.** Toggling `display` or opacity on text that is already in the DOM announces nothing. Write the text when the event happens (`flashMsg()` does this) and start the region empty.
+- **Swapping a view must move focus.** `setTab()` calls `_focusView()` to focus the revealed container, which is why each one carries `role="region"` and an `aria-label` — focusing a nameless `<div>` announces nothing.
+- **A `placeholder` is not a label.** It satisfies a name check and then disappears as soon as someone types.
+
+Known and accepted: WCAG 2.4.13 Focus Appearance (AAA) is not fully met — the bar here is AA. Focus rings on the dark nav were raised from ~1.8:1 to ~11:1; what remains is a few small controls and the skip link.
+
+None of this is enforced by a test. The functional Playwright specs assert some of it incidentally (`toHaveAccessibleName` on the Models panel), but re-run the tester after touching `ui.html`.
 
 ## Notes
 
