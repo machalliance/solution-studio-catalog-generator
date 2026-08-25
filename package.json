@@ -1,8 +1,25 @@
 {
-  "name": "catalog-generator",
+  "name": "mach-alliance-catalog-generator",
   "version": "0.1.0",
+  "description": "Generates sample product catalogs for MACH Alliance reference implementations.",
   "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "MACH Alliance",
+    "url": "https://machalliance.org/"
+  },
+  "homepage": "https://github.com/machalliance/solution-studio-catalog-generator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/machalliance/solution-studio-catalog-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/machalliance/solution-studio-catalog-generator/issues"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node_modules/.bin/tsx src/server.ts",
