@@ -10,11 +10,12 @@ npm start              # same, no watch
 npm run typecheck      # tsc --noEmit (no build step exists; tsx runs TS directly)
 npm test               # vitest run  (test/**/*.test.ts, excludes test/e2e)
 npm run test:watch
-npm run test:e2e       # playwright; starts its own throwaway server on :3010
+npm run test:e2e       # playwright (functional + accessibility); throwaway server on :3010
 
 npx vitest run test/unit/ssrf.test.ts            # single file
 npx vitest run -t 'rejects v4-mapped loopback'   # single test by name
 npx playwright test test/e2e/ui.spec.ts --headed
+npx playwright test test/e2e/a11y.spec.ts        # axe, WCAG 2.1 A/AA — fails on any violation
 
 docker compose up --build                                  # the app, port 127.0.0.1:3004
 npm run test:docker        # vitest inside the container image
@@ -95,6 +96,21 @@ All outbound network calls go through global `fetch`, stubbed per-test by `insta
 `writeConfig()` / `clearConfig()` seed `config.json`, which is how a test picks the provider route. Note it survives the per-test reset in every file's `beforeEach` — a test that depends on default config must clear it first.
 
 `test/e2e` belongs to Playwright and is excluded from vitest. The E2E server runs with empty API keys on purpose — one spec asserts a missing key surfaces as a visible error.
+
+### Accessibility
+
+`test/e2e/a11y.spec.ts` runs axe over every view at **WCAG 2.1 A and AA**, and the suite fails on any violation — that is the bar, not a report to skim. The `best-practice` tag is deliberately excluded so a failure always means a real barrier.
+
+Since `ui.html` is hand-written markup with no component layer, nothing structurally prevents a regression. When adding UI:
+
+- Every control needs a programmatic name. The convention here is `<label for="...">` — a label that merely sits next to a control names nothing, and a `placeholder` satisfies axe while still disappearing the moment someone types.
+- Feedback that appears by unhiding an element needs `role="status"` (or `role="alert"` when it's an error), or it is silent to a screen reader.
+- Colour is never the only signal: state needs a word, and decorative glyphs get `aria-hidden="true"` so they aren't read out.
+- Colour tokens are contrast-checked. `--muted`, `--green`, `--red`, the code-card syntax colours and the inactive nav tabs were all raised to clear 4.5:1; don't reintroduce a lighter value without checking it against the background it actually lands on (`--stone`, not just white).
+
+The spec also asserts things axe cannot see — that live regions carry the right role, that the key status reads without colour, and that the tab bar is keyboard-operable.
+
+Note the E2E specs share one server. `a11y.spec.ts` creates its own catalog with a category name no other spec uses (sharing one would trip the fixture-collision rename) and deletes it in `afterAll`.
 
 ## Notes
 
