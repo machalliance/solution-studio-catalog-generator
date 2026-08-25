@@ -1019,7 +1019,7 @@ function itemCard(item) {
       <div class="spinner" id="spin-${item.objectID}"><div class="spin"></div></div>
     </div>
     <div class="item-info">
-      <div class="item-name">${item.name}</div>
+      <div class="item-name">${escHtml(item.name)}</div>
       <div class="item-id">${escHtml(item.objectID)}</div>
       <div class="item-badges">
         ${item.hasImage && item.isAIGenerated ? '<span class="badge badge-done">✓ generated</span>' : item.hasImage ? '<span class="badge badge-original">⬡ original</span>' : '<span class="badge badge-missing">⚠ no image</span>'}
@@ -1575,8 +1575,19 @@ function flashMsg(id) {
   setTimeout(() => el.classList.remove('show'), 2000)
 }
 
+// Escapes the apostrophe too — several handlers below sit in single-quoted attributes
+// (onclick='fn("${...}")'), where leaving ' alone lets a value close the attribute early.
 function escHtml(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+}
+
+// For a value interpolated into a JS string literal that itself sits inside an HTML
+// attribute — onclick="fn('${...}')". The browser HTML-decodes the attribute *before*
+// handing it to the JS parser, so escaping for only one of the two layers isn't enough:
+// escHtml alone turns ' into &#39;, which decodes right back to ' and closes the string.
+// Escape for JS first, then for HTML, so each layer is undone in the right order.
+function escAttrJs(s) {
+  return escHtml(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"'))
 }
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────
@@ -2294,7 +2305,7 @@ function renderMapList() {
     return
   }
   el.innerHTML = exportMaps.map(m => `
-    <button onclick='selectMap("${m.id}")' style="width:100%;text-align:left;font-family:var(--font);font-size:12px;padding:8px 16px;border:none;background:${currentMap?.id===m.id?'var(--stone)':'none'};cursor:pointer;border-left:3px solid ${currentMap?.id===m.id?'var(--accent)':'transparent'};color:var(--ink)">
+    <button onclick='selectMap("${escAttrJs(m.id)}")' style="width:100%;text-align:left;font-family:var(--font);font-size:12px;padding:8px 16px;border:none;background:${currentMap?.id===m.id?'var(--stone)':'none'};cursor:pointer;border-left:3px solid ${currentMap?.id===m.id?'var(--accent)':'transparent'};color:var(--ink)">
       <div style="font-weight:500">${escHtml(m.name)}</div>
       <div style="font-size:10px;color:var(--muted);margin-top:2px">${m.fields.filter(f=>f.include).length} fields</div>
     </button>`).join('')
@@ -2412,9 +2423,9 @@ function renderMapEditor(map) {
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="btn btn-ghost" onclick="deleteMap('${map.id}')" style="color:var(--red);border-color:#fecaca">Delete</button>
+          <button class="btn btn-ghost" onclick="deleteMap('${escAttrJs(map.id)}')" style="color:var(--red);border-color:#fecaca">Delete</button>
           <button class="btn btn-ghost" onclick="saveMap()">Save</button>
-          <button class="btn btn-solid" onclick="runExport('${map.id}')">⬇ Download</button>
+          <button class="btn btn-solid" onclick="runExport('${escAttrJs(map.id)}')">⬇ Download</button>
         </div>
       </div>
       <div id="emSaveMsg" style="font-size:11px;color:var(--green);margin-bottom:8px;display:none">Saved</div>
