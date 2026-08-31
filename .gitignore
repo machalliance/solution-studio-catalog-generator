@@ -96,8 +96,9 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# Agent / tooling state
+# Agent / tooling state — local notes only, never pushed to the shared repo
 .claude/
+CLAUDE.md
 
 # Temp files
 tmp/

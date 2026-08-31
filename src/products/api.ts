@@ -125,6 +125,15 @@ function parseTagList(val: unknown): string[] {
   return String(val ?? '').split(',').map(t => t.trim()).filter(Boolean)
 }
 
+// The `style` field (distinct from descriptive tags) is deliberately just these two values
+// for now — anything else collapses to the 'smart-casual' default rather than being
+// rejected, since this is set from several places (manual UI, AI batch generation) that
+// shouldn't 400 the whole request over a stray value.
+const VALID_STYLES = new Set(['casual', 'smart-casual'])
+function normalizeStyle(val: unknown): string {
+  return VALID_STYLES.has(String(val)) ? String(val) : 'smart-casual'
+}
+
 // Every (site, category) pair that could have a fixture — every site's registered
 // categories, plus any on-disk fixture not accounted for by a site (hand-added files),
 // attributed to the fallback site the same way unregistered categories always have been.
@@ -891,7 +900,7 @@ imageGenRoutes.delete('/items', async c => {
 
 imageGenRoutes.post('/items', async c => {
   const body = await c.req.json() as any
-  const { site, category, name, brand, price, fit, tags, colourHex, description } = body
+  const { site, category, name, brand, price, fit, style, tags, colourHex, description } = body
   if (!site || !category || !name) return c.json({ error: 'site, category, and name required' }, 400)
   const siteDef = loadSites().find(s => s.id === site)
   if (!siteDef) return c.json({ error: `Unknown site: ${site}` }, 400)
@@ -904,7 +913,7 @@ imageGenRoutes.post('/items', async c => {
   const slug     = slugify(name)
   const newItem: CatalogItem = {
     objectID, name, brand: brand || '', price: parsedPrice,
-    currency: 'USD', category, style: 'smart-casual', fit: fit || 'unisex',
+    currency: 'USD', category, style: normalizeStyle(style), fit: fit || 'unisex',
     tags: tagList, colourHex: colourHex || '#888888', colourFamily: 'neutral',
     images: [], url: `/products/${slug}`,  // no image yet — set by /generate, never guessed at creation
     inStock: true, description: description || '',
@@ -998,7 +1007,7 @@ imageGenRoutes.patch('/:objectID/prompt', async c => {
 
 imageGenRoutes.patch('/:objectID/meta', async c => {
   const objectID = c.req.param('objectID')
-  const { name, brand, colourFamily, price, currency, fit } = await c.req.json()
+  const { name, brand, colourFamily, price, currency, fit, style } = await c.req.json()
   if (!name) return c.json({ error: 'name required' }, 400)
   let parsedPrice: number | null = 0
   if (price !== undefined) {
@@ -1012,6 +1021,7 @@ imageGenRoutes.patch('/:objectID/meta', async c => {
     if (price        !== undefined) it.price        = parsedPrice
     if (currency     !== undefined) it.currency     = currency || 'USD'
     if (fit           !== undefined) it.fit          = fit || 'unisex'
+    if (style         !== undefined) it.style        = normalizeStyle(style)
   })
   if (!item) return c.json({ error: 'Not found' }, 404)
   return c.json({ ok: true })
@@ -1094,8 +1104,9 @@ imageGenRoutes.post('/generate-items', async c => {
 Output a JSON array of items matching the user's description.
 Valid categories: ${validCats.join(', ')}
 Each item must have EXACTLY these fields:
-{ "name": "...", "brand": "...", "category": "...", "fit": "mens"|"womens"|"unisex", "tags": [...], "colourHex": "#rrggbb", "colourFamily": "...", "price": ${priceInstruction} }
-Style tag instructions: ${styleInstruction}
+{ "name": "...", "brand": "...", "category": "...", "fit": "mens"|"womens"|"unisex", "style": "casual"|"smart-casual", "tags": [...], "colourHex": "#rrggbb", "colourFamily": "...", "price": ${priceInstruction} }
+"style" is the item's overall dress-code register — "casual" for everyday/relaxed pieces (flannel shirts, weekend wear, denim, athleisure), "smart-casual" for more polished pieces (blazers, tailored trousers, dress shoes). Judge it from the product itself, independent of whatever the user's prompt says about descriptive tags below.
+Style tag instructions (these are separate descriptive tags, not the "style" field above): ${styleInstruction}
 Output ONLY a valid JSON array. No markdown, no prose.`
   try {
     const raw = await callText(prompt, { system, maxTokens: 2000 })
@@ -1175,7 +1186,7 @@ imageGenRoutes.post('/items/batch', async c => {
     const newItem: CatalogItem = {
       objectID, name: item.name, brand: item.brand || '',
       price: parsedPrice,
-      currency: item.currency || 'USD', category: cat, style: 'smart-casual',
+      currency: item.currency || 'USD', category: cat, style: normalizeStyle(item.style),
       fit: item.fit || 'unisex', tags: tagList, colourHex: item.colourHex || '#888888',
       colourFamily: item.colourFamily || 'neutral',
       images: imageUrl ? [imageUrl] : [],  // only claim an image if one was actually generated for this item

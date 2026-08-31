@@ -4,21 +4,34 @@ services:
       context: .
       target: runtime
     ports:
-      # Bound to the loopback interface only. /api/* is deliberately unauthenticated
-      # (it's the local UI's own backend — see requireAuth in server.ts), so a bare
-      # "3004:3004" would publish every mutating route to the whole LAN. Remote
-      # consumers use the token-gated /catalog/* API via a reverse proxy instead.
-      - "127.0.0.1:${PORT:-3004}:3004"
+      # Published to all interfaces, reachable from other devices on the LAN — a deliberate
+      # choice, not an oversight: /api/* is unauthenticated (it's the local UI's own
+      # backend — see requireAuth in server.ts) and includes destructive routes and ones
+      # that trigger billed OpenAI/Anthropic calls, so anyone else on this network can also
+      # reach those. Only acceptable on a trusted home/private network. If that ever isn't
+      # true, restrict this back to "127.0.0.1:${PORT:-3004}:3004" and reach the UI only
+      # from the Docker host — /catalog/* (token-gated via STUDIO_API_TOKEN) stays the safe
+      # way for other devices/services to consume the catalog either way.
+      - "${PORT:-3004}:3004"
     env_file: .env
     security_opt:
       - no-new-privileges:true
-    # All four data directories live under ./data in this checkout. They are relative
-    # bind mounts rather than named volumes so the catalog stays readable and editable
-    # from the host, and so another local tool can be pointed at the same files.
+    # Overrides the image's default "node" user (UID 1000) to run as the host user instead.
+    # Without this, writes to bind-mounted host directories fail with a permission error
+    # whenever the host UID doesn't happen to be 1000 — e.g. CATALOG_HOST_PATH/
+    # IMAGES_HOST_PATH pointing at another project's directory, owned by whoever's running
+    # this, not by uid 1000. Set HOST_UID/HOST_GID in .env to `id -u`/`id -g` for your user.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    # All four data directories are relative bind mounts rather than named volumes, so the
+    # catalog stays readable and editable from the host. catalog/images additionally read
+    # their host-side source from CATALOG_HOST_PATH/IMAGES_HOST_PATH (.env) rather than a
+    # fixed ./data path — empty means local to this checkout (the default, same as
+    # backups/exports below); set them to point at another location on this machine (e.g. a
+    # sibling project) so a different local tool can be pointed at the same files instead.
     volumes:
       - ./src:/app/src
-      - ./data/catalog:/app/data/catalog
-      - ./data/images:/app/data/images
+      - ${CATALOG_HOST_PATH:-./data/catalog}:/app/data/catalog
+      - ${IMAGES_HOST_PATH:-./data/images}:/app/data/images
       - ./data/backups:/app/data/backups
       - ./data/exports:/app/data/exports
     restart: unless-stopped

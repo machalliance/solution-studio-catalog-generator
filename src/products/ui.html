@@ -1239,6 +1239,13 @@ function renderDetail() {
               <option value="womens" ${item.fit==='womens'?'selected':''}>Women's</option>
             </select>
           </div>
+          <div class="form-row" style="width:120px;flex-shrink:0">
+            <label for="styleInput">Style</label>
+            <select id="styleInput">
+              <option value="casual"       ${item.style==='casual'      ?'selected':''}>Casual</option>
+              <option value="smart-casual" ${item.style==='smart-casual'?'selected':''}>Smart Casual</option>
+            </select>
+          </div>
         </div>
         <div style="display:flex;gap:8px">
           <div class="form-row" style="flex:1">
@@ -1377,19 +1384,21 @@ async function saveMeta() {
   const brand       = document.getElementById('brandInput')?.value?.trim()
   const colourFamily= document.getElementById('colourInput')?.value?.trim()
   const fit         = document.getElementById('fitInput')?.value || 'unisex'
+  const style       = document.getElementById('styleInput')?.value || 'smart-casual'
   const price       = parseFloat(document.getElementById('priceInput')?.value) || 0
   const currency    = document.getElementById('currencyInput')?.value?.trim() || 'USD'
   if (!name || !currentItem) return
   try {
     await apiCall(`/api/${currentItem.objectID}/meta`, {
       method: 'PATCH', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, brand, colourFamily, fit, price, currency })
+      body: JSON.stringify({ name, brand, colourFamily, fit, style, price, currency })
     })
   } catch (err) { toast('Error: ' + err.message); return }
   currentItem.name        = name
   currentItem.brand       = brand
   currentItem.colourFamily= colourFamily
   currentItem.fit         = fit
+  currentItem.style       = style
   currentItem.price       = price
   currentItem.currency    = currency
   const nameEl = document.querySelector(`#card-${currentItem.objectID} .item-name`)
@@ -1836,10 +1845,11 @@ function _singleInputHtml() {
       <div class="form-row"><label for="siTags">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(comma-separated)</span></label>
         <input type="text" id="siTags" placeholder="e.g. slim, chino, cotton, smart-casual"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
       <div class="form-row"><label for="siBrand">Brand</label><input type="text" id="siBrand" placeholder="e.g. Arket"></div>
       <div class="form-row"><label for="siPrice">Price (USD)</label><input type="number" id="siPrice" placeholder="120" step="0.01" min="0"></div>
       <div class="form-row"><label for="siFit">Fit</label><select id="siFit"><option value="unisex">Unisex</option><option value="mens">Men's</option><option value="womens">Women's</option></select></div>
+      <div class="form-row"><label for="siStyle">Style</label><select id="siStyle"><option value="casual">Casual</option><option value="smart-casual" selected>Smart Casual</option></select></div>
     </div>
     <div style="margin-bottom:14px">
       <div class="form-row"><label for="siColourFamily">Colour</label><input type="text" id="siColourFamily" placeholder="e.g. navy, stone, olive, camel"></div>
@@ -1869,7 +1879,7 @@ function _updateCreatorToolbar() {
 function _newPending(fields) {
   const id = `p${++_pendingCtr}`
   return {
-    _id: id, name: '', brand: '', category: '', fit: 'unisex',
+    _id: id, name: '', brand: '', category: '', fit: 'unisex', style: 'smart-casual',
     tags: [], colourHex: '#888888', colourFamily: '', price: 0, currency: 'USD',
     description: '', imagePrompt: '', imageUrl: '',
     _descStatus: 'pending', _queryStatus: 'pending', _imgStatus: 'pending',
@@ -1887,6 +1897,7 @@ function _syncCard(id) {
   if (v('colour') != null) item.colourFamily = v('colour')
   if (v('price') != null)  item.price        = parseFloat(v('price')) || 0
   if (v('fit') != null)    item.fit          = v('fit')
+  if (v('style') != null)  item.style        = v('style')
   if (v('cat') != null)    item.category     = v('cat')
   if (v('desc') != null)   item.description  = v('desc')
   if (v('query') != null)  item.imagePrompt  = v('query')
@@ -1953,7 +1964,7 @@ function _creatorCardHtml(item) {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         <div class="cf">
           <label for="${id}-price">Price (USD)</label>
           <input id="${id}-price" type="number" value="${item.price||''}" placeholder="0.00" step="0.01" min="0"
@@ -1965,6 +1976,13 @@ function _creatorCardHtml(item) {
             <option value="unisex" ${item.fit==='unisex'?'selected':''}>Unisex</option>
             <option value="mens"   ${item.fit==='mens'  ?'selected':''}>Men's</option>
             <option value="womens" ${item.fit==='womens'?'selected':''}>Women's</option>
+          </select>
+        </div>
+        <div class="cf">
+          <label for="${id}-style">Style</label>
+          <select id="${id}-style" onchange="pendingItems.find(p=>p._id==='${id}').style=this.value">
+            <option value="casual"       ${item.style==='casual'      ?'selected':''}>Casual</option>
+            <option value="smart-casual" ${item.style==='smart-casual'?'selected':''}>Smart Casual</option>
           </select>
         </div>
       </div>
@@ -2027,10 +2045,11 @@ async function createSingleItem() {
   const brand       = document.getElementById('siBrand')?.value?.trim() || ''
   const price       = parseFloat(document.getElementById('siPrice')?.value) || 0
   const fit         = document.getElementById('siFit')?.value || 'unisex'
+  const style       = document.getElementById('siStyle')?.value || 'smart-casual'
   const colourFamily= document.getElementById('siColourFamily')?.value?.trim() || ''
   const colourHex   = '#888888'
 
-  const item = _newPending({ name, brand, category: cat, fit, tags, colourHex, colourFamily, price })
+  const item = _newPending({ name, brand, category: cat, fit, style, tags, colourHex, colourFamily, price })
   pendingItems.push(item)
 
   // Collapse the input form and render cards
@@ -2071,6 +2090,7 @@ async function generateItemsFromPrompt() {
       brand:       ai.brand || '',
       category:    ai.category,
       fit:         ai.fit || 'unisex',
+      style:       ai.style === 'casual' ? 'casual' : 'smart-casual',
       tags:        ai.tags || [],
       colourHex:   ai.colourHex || '#888888',
       colourFamily:ai.colourFamily || '',
