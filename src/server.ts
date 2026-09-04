@@ -90,10 +90,14 @@ app.get('/images/:filename', c => {
   return new Response(buf, { headers: { 'Content-Type': mime, 'Cache-Control': 'no-cache' } })
 })
 
-// Management API — all tools API routes. No bearer token (the UI has none to send);
-// reachability is what protects it: loopback-only publishing in docker-compose.yml
-// plus the same-origin check below, which is what stops a page the user happens to
-// have open from driving these routes on their behalf.
+// Management API — all tools API routes. No bearer token (the UI has none to send), so
+// the only thing standing in front of these routes is the same-origin check below, which
+// stops a page the user happens to have open from driving them on their behalf. It does
+// NOT stop a direct caller: docker-compose.yml publishes this port on every interface, so
+// anything on the same network can reach /api/* — including the destructive routes and
+// the ones that spend money. That is a deliberate trade (see the comment on `ports:`),
+// and it means "who can route to this port" is the real access control. Only run it on a
+// network where that is acceptable.
 app.use('/api/*', async (c, next) => {
   const err = requireSameOrigin(c)
   if (err) return err
@@ -129,8 +133,10 @@ const PORT = parseInt(process.env.PORT ?? '3004', 10)
 if (!process.env.SKIP_LISTEN) {
   // Left on the default (every interface, dual-stack): the process sits inside a
   // container, so the UI has to be reachable from outside it — and the in-container
-  // healthcheck hits localhost, which can resolve to ::1. docker-compose is what
-  // narrows the exposure, publishing this port to the host's loopback only.
+  // healthcheck hits localhost, which can resolve to ::1. Note that docker-compose does
+  // not narrow this either: it publishes the port on every host interface as well, so the
+  // app is LAN-reachable by default. Change the `ports:` mapping to "127.0.0.1:3004:3004"
+  // to keep it on the host's loopback.
   serve({ fetch: app.fetch, port: PORT }, () => {
     console.log(`Product Catalog Generator running → http://localhost:${PORT}`)
   })

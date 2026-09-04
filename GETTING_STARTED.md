@@ -5,7 +5,8 @@
 ## Before you start
 
 - **Don't put this on the public internet.** `/api/*` — image generation, edits, deletes, backup restore — has no authentication. Anything that can reach the port can call it.
-- **Run it in a sandbox.** Docker (below) is the recommended path; a Docker Desktop sandbox, a devcontainer, a throwaway VM, or a Codespace all work. The supplied `docker-compose.yml` publishes to `127.0.0.1` only and runs with `no-new-privileges`.
+- **It is reachable from your whole network, not just your machine.** The supplied `docker-compose.yml` publishes the port on every interface, so any other device on the network can reach the UI and `/api/*` — deletes, backup restore, and the routes that spend money on model calls included. Only run it on a network you trust. To keep it on your machine alone, change the `ports:` mapping in `docker-compose.yml` to `"127.0.0.1:${PORT:-3004}:3004"`.
+- **Run it in a sandbox.** Docker (below) is the recommended path; a Docker Desktop sandbox, a devcontainer, a throwaway VM, or a Codespace all work. The supplied `docker-compose.yml` runs with `no-new-privileges` and as an unprivileged user.
 - **Model calls cost money.** Image generation especially. There is no spend cap or usage tracking in the app — watch your provider dashboard.
 - **Use a scoped API key.** Prefer a key you can revoke, with a spend limit set at the provider, over your main account key.
 
