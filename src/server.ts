@@ -1,3 +1,7 @@
+// First, and before products/api.ts: reads .env into process.env. api.ts resolves its
+// data paths and provider keys at module scope, and ES module bodies run in import order,
+// so anything that loads .env has to be imported above it to be of any use.
+import './env.js'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
