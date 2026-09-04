@@ -943,9 +943,16 @@ async function generateImageHandler(c: any) {
     const imageUrl = `/images/${objectID}.jpg`
     // images[0] is the single source of truth for what an item's image is — keep it in
     // sync with what was actually just written, not just the response payload.
-    const idx = (found.data.hits as any[]).findIndex(h => h.objectID === objectID)
-    found.data.hits[idx].images = [imageUrl]
-    saveFixture(found.site, found.cat, found.data)
+    //
+    // Via updateItem, which re-reads the fixture, rather than by mutating `found.data`.
+    // `found` was read before the model call above and is now seconds stale: anything
+    // else that touched this category in the meantime is absent from it, and writing it
+    // back would undo that. Two generates running against the same category used to
+    // leave only the last one's image recorded — the others were generated, paid for,
+    // written to disk, and then orphaned by a fixture that no longer referenced them.
+    // Deletes lost the same way, in reverse: an item removed mid-generation came back.
+    const stored = updateItem(objectID, it => { it.images = [imageUrl] })
+    if (!stored) return c.json({ error: 'Item was removed while its image was generating' }, 404)
     return c.json({ ok: true, imageUrl, fullPrompt: full })
   } catch (err: any) {
     return c.json({ error: err.message }, 500)
@@ -1068,9 +1075,11 @@ imageGenRoutes.post('/:objectID/enrich', async c => {
   if (!found) return c.json({ error: 'Not found' }, 404)
   try {
     const imagePrompt = await callText(enrichUserMessage(found.item, found.site))
-    const idx = (found.data.hits as any[]).findIndex(h => h.objectID === objectID)
-    found.data.hits[idx].imagePrompt = imagePrompt
-    saveFixture(found.site, found.cat, found.data)
+    // Re-read rather than write back `found`, which predates the await — see the note in
+    // generateImageHandler for what the stale snapshot costs.
+    if (!updateItem(objectID, it => { it.imagePrompt = imagePrompt })) {
+      return c.json({ error: 'Item was removed while its prompt was generating' }, 404)
+    }
     return c.json({ ok: true, imagePrompt })
   } catch (err: any) { return c.json({ error: err.message }, 500) }
 })
@@ -1084,9 +1093,11 @@ imageGenRoutes.post('/:objectID/describe', async c => {
   const msg = [`Name: ${item.name}`, item.brand ? `Brand: ${item.brand}` : '', tags ? `Tags: ${tags}` : '', item.fit ? `Fit: ${item.fit}` : '', item.price ? `Price: $${item.price}` : ''].filter(Boolean).join('\n')
   try {
     const description = await callText(msg, { system: 'You write retail product descriptions. Write 1–2 sentences. Specific and punchy. Plain text only.', maxTokens: 250 })
-    const idx = (found.data.hits as any[]).findIndex(h => h.objectID === objectID)
-    found.data.hits[idx].description = description
-    saveFixture(found.site, found.cat, found.data)
+    // Re-read rather than write back `found`, which predates the await — see the note in
+    // generateImageHandler for what the stale snapshot costs.
+    if (!updateItem(objectID, it => { it.description = description })) {
+      return c.json({ error: 'Item was removed while its description was generating' }, 404)
+    }
     return c.json({ ok: true, description })
   } catch (err: any) { return c.json({ error: err.message }, 500) }
 })

@@ -32,6 +32,8 @@ npm run test:e2e:docker
 
 Run `npm run typecheck` and `npm test` before opening a PR. E2E is slower — run it when you've touched `ui.html` or a route it drives.
 
+CI runs all three on every pull request (`.github/workflows/ci.yml`), plus the typecheck and unit suite again on Node 20.19 — the floor in `engines`. Running them locally first just means you find out sooner.
+
 ## Where the code is
 
 Three files carry nearly the whole app:
