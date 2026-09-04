@@ -12,7 +12,7 @@
 
 ## Requirements
 
-- Docker, or Node.js 20+ if running without it.
+- Docker, or Node.js 20.12+ if running without it.
 - An API key for at least one model provider. The default configuration uses Anthropic for text and OpenAI for images, so that means both keys — see [Models and providers](README.md#models-and-providers) for single-provider setups.
 
 ## 1. Get the code
@@ -54,7 +54,7 @@ npm install
 npm run dev
 ```
 
-Either way, open <http://localhost:3004/products>.
+Either way, open <http://localhost:3004>.
 
 A fresh clone has no data. The app starts with an empty catalog — that's expected.
 
@@ -92,7 +92,7 @@ Templates beat the AI draft flow for targets with nested or array-shaped fields.
 `/catalog/*` is a separate REST surface for other services to read the catalog:
 
 ```bash
-curl http://localhost:3004/catalog?category=vases&limit=10
+curl 'http://localhost:3004/catalog?category=vases&limit=10'
 ```
 
 Set `STUDIO_API_TOKEN` in `.env` to require `Authorization: Bearer <token>` on it. If anything outside your machine will call this, put a reverse proxy in front of `/catalog/*` and leave `/api/*` unreachable.
