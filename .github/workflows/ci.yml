@@ -1,0 +1,85 @@
+# Runs the same three commands CONTRIBUTING.md asks contributors to run, so a PR is
+# checked the way the project already describes rather than by a separate CI-only recipe.
+#
+# Deliberately runs on the host rather than through docker-compose.test.yml: the Docker
+# targets exist so the suite can be run against the same busybox tar and platform-specific
+# sharp binaries the runtime image has, which matters locally, but here the Ubuntu runner
+# is a fine host and skipping the image build keeps the feedback loop short. If a failure
+# ever turns out to be environment-specific, `npm run test:docker` is the reproduction.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same PR cancels the run still in flight for it.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Typecheck and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 20.12 is the floor in package.json engines — process.loadEnvFile(), which src/env.ts
+      # needs. Testing on it as well as current catches anything that quietly assumes newer.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and API tests
+        run: npm test
+
+      # Only the browser Chromium is needed; --with-deps pulls the system libraries the
+      # runner does not already carry.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # No API keys are configured here, and none are needed: every outbound model call in
+      # the suite is stubbed, and the specs assert that a missing key surfaces as a visible
+      # error rather than a silent no-op.
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  engines:
+    name: Node 20.12 floor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.12'
+          cache: npm
+
+      - run: npm ci
+
+      # Typecheck and the in-process suite only — the browser specs are covered above and
+      # do not depend on the Node version under test.
+      - run: npm run typecheck
+      - run: npm test
