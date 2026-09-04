@@ -12,7 +12,7 @@
 
 ## Requirements
 
-- Docker, or Node.js 20.12+ if running without it.
+- Docker, or Node.js 20.19+ if running without it.
 - An API key for at least one model provider. The default configuration uses Anthropic for text and OpenAI for images, so that means both keys — see [Models and providers](README.md#models-and-providers) for single-provider setups.
 
 ## 1. Get the code

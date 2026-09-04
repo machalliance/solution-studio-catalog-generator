@@ -30,8 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 20.12 is the floor in package.json engines — process.loadEnvFile(), which src/env.ts
-      # needs. Testing on it as well as current catches anything that quietly assumes newer.
+      # Current LTS. The floor is covered by the second job below.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -65,7 +64,7 @@ jobs:
           retention-days: 7
 
   engines:
-    name: Node 20.12 floor
+    name: Node 20.19 floor
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -74,7 +73,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.12'
+          node-version: '20.19'
           cache: npm
 
       - run: npm ci

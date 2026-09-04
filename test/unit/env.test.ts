@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { loadLocalEnv } from '../../src/env.ts'
+import { loadLocalEnv, warnOnMalformedKeys } from '../../src/env.ts'
 
 // loadLocalEnv() is what makes `npm run dev` see .env at all — under Docker, compose
 // populates the environment instead and there is no file to read. The behavior worth
@@ -65,5 +65,41 @@ describe('loadLocalEnv', () => {
     writeFileSync(envFile, 'CATGEN_TEST_A=value # trailing note\n')
     loadLocalEnv(envFile)
     expect(process.env.CATGEN_TEST_A?.startsWith('value')).toBe(true)
+  })
+})
+
+// Node 22+ skips an indented comment line; Node 20 reads it as the start of a key name and
+// runs on to the '=' of the next line, producing one nonsense variable and silently losing
+// the key that followed. The detector is tested directly rather than through loadLocalEnv,
+// because which behaviour you get depends on the Node the suite happens to run under.
+describe('warnOnMalformedKeys', () => {
+  const BOGUS = '      # required for anthropic/* models on this route\nOPENAI_API_KEY'
+  let warn: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => { warn = vi.spyOn(console, 'warn').mockImplementation(() => {}) })
+  afterEach(() => { delete process.env[BOGUS]; warn.mockRestore() })
+
+  it('flags a name that swallowed a comment and a newline', () => {
+    process.env[BOGUS] = 'a-secret-value'
+    expect(warnOnMalformedKeys('/tmp/.env')).toEqual([BOGUS])
+    expect(warn).toHaveBeenCalled()
+  })
+
+  it('never puts the mis-parsed value in the warning', () => {
+    process.env[BOGUS] = 'a-secret-value'
+    warnOnMalformedKeys('/tmp/.env')
+    const said = warn.mock.calls.flat().join(' ')
+    expect(said).not.toContain('a-secret-value')
+  })
+
+  it('ignores a name the file did not introduce', () => {
+    process.env[BOGUS] = 'a-secret-value'
+    expect(warnOnMalformedKeys('/tmp/.env', new Set([BOGUS]))).toEqual([])
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('says nothing about a well-formed environment', () => {
+    expect(warnOnMalformedKeys('/tmp/.env')).toEqual([])
+    expect(warn).not.toHaveBeenCalled()
   })
 })

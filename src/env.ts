@@ -26,9 +26,10 @@ const DEFAULT_ENV_FILE = join(__dirname, '../.env')
 // as already-set, so a blank key stays blank rather than being backfilled from the file.
 export function loadLocalEnv(file: string = process.env.ENV_FILE || DEFAULT_ENV_FILE): boolean {
   if (!existsSync(file)) return false
-  // Added in Node 20.12; package.json asks for >=20.12 because of this. Warn rather than
-  // fail on an older runtime — the app still works, it just needs the keys exported by
-  // hand, and a silent no-op here is exactly the confusion this function exists to remove.
+  // Added in Node 20.12. package.json asks for >=20.19, which the test toolchain forces
+  // (rolldown, under vitest, publishes no binding below it). Warn rather than fail on an
+  // older runtime — the app still works, it just needs the keys exported by hand, and a
+  // silent no-op here is exactly the confusion this function exists to remove.
   if (typeof process.loadEnvFile !== 'function') {
     console.warn(
       `Found ${file} but this Node (${process.version}) can't read it — process.loadEnvFile() ` +
@@ -37,7 +38,9 @@ export function loadLocalEnv(file: string = process.env.ENV_FILE || DEFAULT_ENV_
     return false
   }
   try {
+    const before = new Set(Object.keys(process.env))
     process.loadEnvFile(file)
+    warnOnMalformedKeys(file, before)
     return true
   } catch (err: any) {
     // A malformed .env shouldn't take the server down — say so and carry on with whatever
@@ -45,6 +48,40 @@ export function loadLocalEnv(file: string = process.env.ENV_FILE || DEFAULT_ENV_
     console.warn(`Could not read ${file}: ${err.message}`)
     return false
   }
+}
+
+// Node's .env parser got more tolerant over time, and the gap is silent: an indented
+// comment line — the shape you get by pasting a key over the value in .env.example and
+// letting the trailing comment wrap onto its own line —
+//
+//     ANTHROPIC_API_KEY=sk-ant-...
+//           # required for anthropic/* models on this route
+//     OPENAI_API_KEY=sk-proj-...
+//
+// is skipped as a comment on Node 22+, but on Node 20 is read as the beginning of a key
+// name, which then runs on to the '=' of the *next* line. The result is one nonsense
+// variable holding the second key's value, and the second key never set at all — with no
+// error anywhere. Rather than re-implement the parser, spot the signature of that failure
+// (a name carrying a newline or starting with '#') and say plainly what to change.
+//
+// Only names the file just introduced are considered, so a genuinely odd variable already
+// in the environment isn't blamed on the file. Names only, never values: the mis-parsed
+// variable's value is the API key itself.
+export function warnOnMalformedKeys(file: string, before: ReadonlySet<string> = new Set()): string[] {
+  const bad = Object.keys(process.env)
+    .filter(k => !before.has(k))
+    .filter(k => k.includes('\n') || k.trimStart().startsWith('#'))
+  if (!bad.length) return bad
+  console.warn(
+    `${file} has a comment on its own indented line, which this Node (${process.version}) ` +
+    `does not recognise — the variable after it was not set. Move each comment to a line ` +
+    `that starts with '#' in column 1, or put it on the end of the value's own line.`,
+  )
+  for (const k of bad) {
+    const shown = k.split('\n')[0].trim().slice(0, 60)
+    console.warn(`  unparsed near: ${shown}`)
+  }
+  return bad
 }
 
 // Runs on import. server.ts imports this module first, before products/api.ts, because
