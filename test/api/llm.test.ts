@@ -362,6 +362,16 @@ describe('POST /api/generate-items', () => {
     expect(system).toContain('"coastal"')
   })
 
+  // SHOW_BRAND isn't set anywhere in this file's env, so it's off here — the default. See
+  // show-brand.test.ts for the SHOW_BRAND=true side, which needs its own process (the flag
+  // is read once at module scope, before any test runs).
+  it('omits the brand field from the schema entirely when SHOW_BRAND is off', async () => {
+    stub.on(ANTHROPIC, () => anthropicText('[]'))
+    await app.request('/api/generate-items', json({ prompt: 'x', site: 'clothing' }))
+    const system = sentSystem(stub.callsTo(ANTHROPIC)[0])
+    expect(system).not.toContain('brand')
+  })
+
   it('falls back to every known category when the site is unknown', async () => {
     stub.on(ANTHROPIC, () => anthropicText('[]'))
     await app.request('/api/generate-items', json({ prompt: 'x', site: 'nope' }))

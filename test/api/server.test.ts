@@ -249,6 +249,14 @@ describe('GET /api/config and /api/settings', () => {
 
     delete process.env.ANTHROPIC_API_KEY
   })
+
+  // SHOW_BRAND isn't set anywhere in this file's env, so this is the off/default case —
+  // see show-brand.test.ts for the SHOW_BRAND=true side (its own process; the flag is read
+  // once at module scope, before any test runs).
+  it('reports showBrand as false when SHOW_BRAND is unset', async () => {
+    const settings = await (await app.request('/api/settings')).json() as any
+    expect(settings.showBrand).toBe(false)
+  })
 })
 
 // A container can't remount its own bind mounts, so POST /settings/host-paths only ever
