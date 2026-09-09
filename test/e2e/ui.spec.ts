@@ -107,11 +107,12 @@ test('adds a product through the New Item flow', async ({ page }) => {
   await openApp(page)
   await openCategory(page)
 
+  // Brand is behind SHOW_BRAND, off by default — #siBrand and the creator card's brand
+  // input are both hidden, not just empty, so this deliberately never fills or asserts one.
   await page.click('button:has-text("New Item")')
   await page.selectOption('#siCat', CATEGORY)
   await page.fill('#siName', 'Zellige Square — Sea Glass')
   await page.fill('#siTags', 'zellige, matte, handmade')
-  await page.fill('#siBrand', 'Clé')
   await page.fill('#siPrice', '24.50')
   await page.click('#siCreateBtn')
 
@@ -120,7 +121,7 @@ test('adds a product through the New Item flow', async ({ page }) => {
   const pendingCard = page.locator('#creatorCards .creator-card')
   await expect(pendingCard).toHaveCount(1)
   await expect(pendingCard.locator('input[id$="-name"]')).toHaveValue('Zellige Square — Sea Glass')
-  await expect(pendingCard.locator('input[id$="-brand"]')).toHaveValue('Clé')
+  await expect(pendingCard.locator('input[id$="-brand"]')).toHaveCount(0)
   await expect(pendingCard.locator('.creator-card-cat')).toHaveText(CATEGORY)
 
   await page.click('#creatorActionBar .btn-solid')
@@ -141,8 +142,11 @@ test('edits an item in the detail panel and persists it across a reload', async 
   await expect(page.locator('#detailPanel')).toHaveClass(/open/)
   await expect(page.locator('#nameInput')).toHaveValue(/Zellige Square/)
 
+  // Brand is behind SHOW_BRAND, off by default — #brandInput is hidden entirely, so this
+  // deliberately never fills or asserts it (see the New Item flow test for the same note).
+  await expect(page.locator('#brandInput')).toHaveCount(0)
+
   await page.fill('#nameInput', 'Zellige Square — Renamed')
-  await page.fill('#brandInput', 'Renamed Brand')
   await page.fill('#priceInput', '31')
   await page.press('#nameInput', 'Enter')
   await expect(page.locator('#metaSaveMsg')).toBeVisible()
@@ -153,7 +157,6 @@ test('edits an item in the detail panel and persists it across a reload', async 
   await expect(page.locator('.item-card')).toContainText('Zellige Square — Renamed')
 
   await page.click('.item-card')
-  await expect(page.locator('#brandInput')).toHaveValue('Renamed Brand')
   await expect(page.locator('#priceInput')).toHaveValue('31')
 })
 

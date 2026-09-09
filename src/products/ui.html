@@ -883,6 +883,14 @@ async function init() {
   ])
   config = cfg
   showBrand = !!settings.showBrand
+  // The New Item form's Brand field is static markup (unlike the item-detail form-row and
+  // the creator cards, both rendered from a template that already checks showBrand) — set
+  // once here since the flag can't change without a restart. Set 'none' explicitly rather
+  // than clearing to '' — this file has a standing gotcha where clearing to '' falls back
+  // to a stylesheet display:none instead of showing the element; setting 'none' directly
+  // has no such ambiguity, and the field is visible again by default with no inline style.
+  const siBrandRow = document.getElementById('siBrand')?.closest('.form-row')
+  if (siBrandRow) siBrandRow.style.display = showBrand ? '' : 'none'
   if (cfg.currentSiteId) currentSiteId = cfg.currentSiteId
   renderSiteSelect()
   renderSidebar()
