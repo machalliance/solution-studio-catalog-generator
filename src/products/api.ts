@@ -1077,7 +1077,7 @@ imageGenRoutes.post('/:objectID/tweak', async c => {
 })
 
 imageGenRoutes.post('/:objectID/tweak/accept', c => {
-  const objectID = c.req.param('objectID')
+  const objectID = sanitizeId(c.req.param('objectID'))
   const tweakPath = join(IMAGES, `${objectID}-tweak.jpg`)
   if (!existsSync(tweakPath)) return c.json({ error: 'No pending tweak for this item' }, 404)
   renameSync(tweakPath, join(IMAGES, `${objectID}.jpg`))
@@ -1086,7 +1086,7 @@ imageGenRoutes.post('/:objectID/tweak/accept', c => {
 })
 
 imageGenRoutes.post('/:objectID/tweak/discard', c => {
-  const objectID = c.req.param('objectID')
+  const objectID = sanitizeId(c.req.param('objectID'))
   const tweakPath = join(IMAGES, `${objectID}-tweak.jpg`)
   if (existsSync(tweakPath)) unlinkSync(tweakPath)
   return c.json({ ok: true })

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
-import { rmSync, readdirSync } from 'node:fs'
+import { rmSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   createWorkspace, destroyWorkspace, writeSites, writeFixtureFile, readFixtureFile,
@@ -243,6 +243,19 @@ describe('POST /api/:objectID/tweak/accept|discard', () => {
 
   it('treats discarding a non-existent tweak as a no-op success', async () => {
     expect((await app.request('/api/tile-001/tweak/discard', json({}))).status).toBe(200)
+  })
+
+  // Regression for the audit finding: objectID reached the filesystem unsanitized here,
+  // unlike every other route that puts one on disk. Hono URL-decodes path params, so a
+  // %2e%2e%2f-encoded objectID could rename/delete a file outside data/images entirely.
+  it('sanitizes the objectID before touching the filesystem, blocking traversal', async () => {
+    const canaryPath = join(ws.images, '..', 'canary-tweak.jpg')
+    await writeImage(ws, '../canary-tweak.jpg')
+    expect(existsSync(canaryPath)).toBe(true)
+
+    const res = await app.request('/api/%2e%2e%2fcanary/tweak/discard', json({}))
+    expect(res.status).toBe(200)
+    expect(existsSync(canaryPath)).toBe(true) // untouched — sanitizeId stripped the traversal
   })
 })
 

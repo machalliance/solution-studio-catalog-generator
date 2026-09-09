@@ -44,8 +44,6 @@ Three files carry nearly the whole app:
 
 The comments in `api.ts` are the design record for this project. They explain why things are the way they are — the fixture-naming rules, the config/env security boundary, the synchronous I/O choice. Read them before changing behavior, and update them in the same commit when behavior changes. A change that leaves a comment describing the old behavior is incomplete.
 
-`CLAUDE.md` is the condensed version of the same material.
-
 ## Testing rules
 
 **Write the test before the code, and don't rewrite a test to make it pass.** When a test fails, the default assumption is that the code is wrong.
@@ -89,7 +87,7 @@ Branch off `main`, keep the change scoped to one thing, and say in the descripti
 
 ## Security
 
-Don't open a public issue for a vulnerability. Report it privately through GitHub's security advisories on the repository.
+Don't open a public issue for a vulnerability. See [SECURITY.md](SECURITY.md) for how to report one privately.
 
 ## License
 
