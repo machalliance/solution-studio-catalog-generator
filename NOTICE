@@ -1,0 +1,34 @@
+The MIT license in LICENSE covers the source code in this repository.
+
+It does not extend to:
+
+- The "MACH Alliance" name and logo, as used in this app's UI and documentation. These
+  remain the property of MACH Alliance, Inc. and are not licensed for reuse, redistribution,
+  or sale under the MIT grant above.
+- Brand names appearing in catalog data generated with SHOW_BRAND enabled. The generation
+  prompt requires an invented, fictional house-brand name — see the SHOW_BRAND entry in
+  README.md and .env.example — but model output isn't guaranteed with certainty. Verify a
+  batch before publishing it anywhere if you've turned the flag on.
+
+## Third-party attribution
+
+`npm ci --omit=dev` (Dockerfile) copies this project's production dependencies into the
+runtime image, so redistributing that image redistributes them too. The following are
+licensed Apache-2.0 and carry their own copyright/attribution requirements independent of
+this repository's own MIT license:
+
+@ai-sdk/anthropic, @ai-sdk/gateway, @ai-sdk/openai, @ai-sdk/openai-compatible,
+@ai-sdk/provider, @ai-sdk/provider-utils, @img/sharp-linux-x64, @img/sharp-linuxmusl-x64,
+@openrouter/ai-sdk-provider, @vercel/oidc, @workflow/serde, ai, b4a, bare-events, bare-fs,
+bare-path, bare-stream, bare-url, crc-32, detect-libc, events-universal, readdir-glob, sharp,
+text-decoder
+
+Each is © its respective copyright holders, licensed under the Apache License, Version 2.0
+(https://www.apache.org/licenses/LICENSE-2.0).
+
+`sharp`'s prebuilt platform binary (whichever of @img/sharp-libvips-linux-x64 /
+@img/sharp-libvips-linuxmusl-x64 installs for the target platform — the Alpine-based runtime
+image uses the musl variant) bundles libvips itself, licensed LGPL-3.0-or-later, along with
+several further third-party libraries under their own licenses (aom, cairo, glib, harfbuzz,
+and others) — see that package's own README for the full breakdown. This repository links to
+it dynamically only; no modified copy of libvips or its dependencies is distributed.

@@ -10,7 +10,7 @@ It's built for people building demos and integrations, not for running a real st
 
 ## What it does
 
-- **Generates product data** — single items by hand, or a batch of items from a natural-language prompt ("12 minimalist ceramic vases, $40–120") via whichever text model is configured.
+- **Generates product data** — single items by hand, or a batch of items from a natural-language prompt ("12 minimalist ceramic vases, $40–120") via whichever text model is configured. Brand names are off by default: a model asked for "realistic" items with no other constraint reaches for real, currently-trading companies, which is a real problem for demo data meant to ship in a published reference implementation. Set `SHOW_BRAND=true` (see **Environment variables**) to have it invent a fictional house-brand instead — never a real one — or leave it off to omit the field entirely. See [NOTICE](NOTICE) for how this relates to the license.
 - **Generates product images** — via the configured image model (`openai/gpt-image-1` by default; set in Settings, and reachable directly or through a gateway — see **Models and providers**), using a base image prompt per catalog plus a per-product description. An existing image can also be edited in place ("Tweak") rather than regenerated from scratch. Every generated image is post-processed to force a genuinely pure `#ffffff` background — the model consistently renders "white" a few units off no matter how the prompt is worded, so this is pixel correction (a tolerant flood-fill from the image edges), not prompt engineering. See the `whitenBackground()` implementation notes in `api.ts` for how it avoids bleeding into white/light-colored products.
 - **Organizes products into catalogs and categories** — a "catalog" (called a *site* internally) is a top-level vertical like Clothing or Home, each with its own categories and its own base image prompt. The same category name can exist independently in two different catalogs.
 - **Builds export field maps** — define how your catalog's fields map onto a target system's schema (dotted paths, array grouping, transforms, computed fields), preview the result against a real product, then run or download it as JSON + a zip of the referenced images.
@@ -142,6 +142,8 @@ PORT=3004
 CATALOG_PATH=           # product JSON fixtures — defaults to /app/data/catalog in Docker
 IMAGES_PATH=            # generated/uploaded images — defaults to /app/data/images in Docker
 STUDIO_API_TOKEN=       # bearer token for the /catalog/* API — omit to leave it open
+SHOW_BRAND=             # true to have batch generation invent a fictional brand name per
+                        # item; off (default) omits the "brand" field entirely — see NOTICE
 ```
 
 Upgrading from a pre-provider checkout: `LLM_CLAUDE_CHAT` and `LLM_CLAUDE_FAST` are gone — set the text models in Settings instead. An existing `config.json` carrying a bare `model` (e.g. `"gpt-image-1"`) is read forward automatically as `openai/gpt-image-1`, so a running install keeps the image model it had.
@@ -172,4 +174,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the tests and what the pro
 
 ## License
 
-[MIT](LICENSE) — copyright MACH Alliance.
+[MIT](LICENSE) — copyright MACH Alliance. See [NOTICE](NOTICE) for what that grant doesn't cover: the MACH Alliance name/logo, generated brand names, and third-party attribution for what the Docker runtime image bundles.

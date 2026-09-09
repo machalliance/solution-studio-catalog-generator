@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
-import { readdirSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readdirSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   createWorkspace, destroyWorkspace, writeSites, writeFixtureFile,
@@ -248,6 +248,79 @@ describe('GET /api/config and /api/settings', () => {
     expect(JSON.stringify(settings)).not.toContain('super-secret-value')
 
     delete process.env.ANTHROPIC_API_KEY
+  })
+})
+
+// A container can't remount its own bind mounts, so POST /settings/host-paths only ever
+// stages CATALOG_HOST_PATH/IMAGES_HOST_PATH into .env for the *next* recreate — it must
+// never touch the live process.env (that's what "active" reports), and it must never
+// clobber anything else already in .env.
+describe('POST /api/settings/host-paths', () => {
+  const envPath = join(ws.root, '.env')
+
+  beforeEach(() => {
+    rmSync(envPath, { force: true })
+    delete process.env.CATALOG_HOST_PATH
+    delete process.env.IMAGES_HOST_PATH
+  })
+
+  it('reports empty active/configured paths and no pending restart when nothing is set', async () => {
+    const settings = await (await app.request('/api/settings')).json() as any
+    expect(settings).toMatchObject({
+      catalogHostPathActive: '', imagesHostPathActive: '',
+      catalogHostPathConfigured: '', imagesHostPathConfigured: '',
+      restartRequired: false,
+    })
+  })
+
+  it('stages a new path without touching the live process env, and flags a restart as required', async () => {
+    const res = await app.request('/api/settings/host-paths', json({
+      catalogHostPath: '../wismo/apps/agent/data/catalog',
+      imagesHostPath:  '../wismo/apps/storefront/public/products',
+    }))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({
+      catalogHostPathConfigured: '../wismo/apps/agent/data/catalog',
+      imagesHostPathConfigured:  '../wismo/apps/storefront/public/products',
+      restartRequired: true,
+    })
+    expect(process.env.CATALOG_HOST_PATH).toBeUndefined()
+
+    const settings = await (await app.request('/api/settings')).json() as any
+    expect(settings.catalogHostPathConfigured).toBe('../wismo/apps/agent/data/catalog')
+    expect(settings.catalogHostPathActive).toBe('')   // still whatever this container was started with
+    expect(settings.restartRequired).toBe(true)
+  })
+
+  it('stops flagging a restart once the container has actually picked up the configured value', async () => {
+    await app.request('/api/settings/host-paths', json({ catalogHostPath: '../greeter/catalog/fixtures' }))
+    process.env.CATALOG_HOST_PATH = '../greeter/catalog/fixtures'   // stands in for a real recreate
+    const settings = await (await app.request('/api/settings')).json() as any
+    expect(settings.restartRequired).toBe(false)
+  })
+
+  it('resets to the project default with an empty string', async () => {
+    await app.request('/api/settings/host-paths', json({ catalogHostPath: '../greeter/catalog/fixtures' }))
+    const res = await app.request('/api/settings/host-paths', json({ catalogHostPath: '' }))
+    expect((await res.json() as any).catalogHostPathConfigured).toBe('')
+  })
+
+  it('rejects a value containing a newline instead of writing a corrupt line into .env', async () => {
+    const res = await app.request('/api/settings/host-paths', json({ catalogHostPath: 'x\nPORT=9999' }))
+    expect(res.status).toBe(400)
+    const settings = await (await app.request('/api/settings')).json() as any
+    expect(settings.catalogHostPathConfigured).toBe('')
+  })
+
+  it('rewrites only the given key, leaving other .env content untouched', async () => {
+    writeFileSync(envPath, 'ANTHROPIC_API_KEY=super-secret\nCATALOG_HOST_PATH=../old/catalog\n# a comment\nPORT=3004\n')
+    await app.request('/api/settings/host-paths', json({ imagesHostPath: '../new/images' }))
+    const text = readFileSync(envPath, 'utf-8')
+    expect(text).toContain('ANTHROPIC_API_KEY=super-secret')
+    expect(text).toContain('CATALOG_HOST_PATH=../old/catalog')
+    expect(text).toContain('# a comment')
+    expect(text).toContain('PORT=3004')
+    expect(text).toContain('IMAGES_HOST_PATH=../new/images')
   })
 })
 

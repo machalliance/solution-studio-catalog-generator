@@ -670,16 +670,35 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
       <div style="background:var(--white);border:1px solid var(--hairline);border-radius:6px;padding:20px">
         <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px">Source system</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6">
-          The directories Product Catalog Generator reads and writes. Configured via Docker volume mounts in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">docker-compose.yml</code>.
+          The host directories Product Catalog Generator reads and writes. Saving here stages a new
+          value in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code> —
+          a container can't remount itself, so it takes effect on the next recreate, not immediately.
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px">
+        <div id="sHostPathBanner" role="status" style="display:none;font-size:11px;background:#fff7e6;border:1px solid #f0c36d;color:#8a5b00;padding:8px 10px;border-radius:4px;margin-bottom:16px;line-height:1.6">
+          Saved, but not yet live — this container is still running with the old path(s). Run this on the host to apply it:
+          <code style="display:block;margin-top:6px;font-size:11px;background:var(--stone);padding:5px 7px;border-radius:3px;user-select:all">docker compose up -d --force-recreate</code>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
           <div class="form-row">
-            <label for="sCatalogPath">Catalog path <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(JSON fixtures — read/write)</span></label>
-            <input type="text" id="sCatalogPath" readonly style="font-family:monospace;font-size:11px;color:var(--muted);cursor:default">
+            <label for="sCatalogHostPath">Catalog directory <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(JSON fixtures)</span></label>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="sCatalogHostPath" style="flex:1;font-family:monospace;font-size:11px" placeholder="e.g. ../sibling-project/data/catalog" spellcheck="false">
+              <button class="btn" type="button" onclick="resetHostPathField('catalog')" style="flex-shrink:0;margin-bottom:0;font-size:11px;padding:6px 10px">Use project default</button>
+            </div>
+            <div id="sCatalogHostPathActive" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
           </div>
           <div class="form-row">
-            <label for="sImagesPath">Images path <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(product images — read/write)</span></label>
-            <input type="text" id="sImagesPath" readonly style="font-family:monospace;font-size:11px;color:var(--muted);cursor:default">
+            <label for="sImagesHostPath">Images directory <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(product images)</span></label>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="sImagesHostPath" style="flex:1;font-family:monospace;font-size:11px" placeholder="e.g. ../sibling-project/public/images" spellcheck="false">
+              <button class="btn" type="button" onclick="resetHostPathField('images')" style="flex-shrink:0;margin-bottom:0;font-size:11px;padding:6px 10px">Use project default</button>
+            </div>
+            <div id="sImagesHostPathActive" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn btn-solid" id="sSaveHostPaths" onclick="saveHostPaths()" style="flex-shrink:0;margin-bottom:0">Save</button>
+            <div id="sHostPathMsg" role="status" style="font-size:11px;color:var(--green);display:none"></div>
+            <div id="sHostPathErr" role="alert" style="font-size:11px;color:var(--red);display:none"></div>
           </div>
         </div>
       </div>
@@ -762,6 +781,16 @@ textarea[readonly] { background: var(--stone); color: var(--muted); cursor: defa
         <div style="font-size:11px;color:var(--muted);margin-top:12px">Set in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code> — requires container restart to take effect.</div>
       </div>
 
+      <!-- Brand names -->
+      <div style="background:var(--white);border:1px solid var(--hairline);border-radius:6px;padding:20px">
+        <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;margin-bottom:4px">Brand names</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+          Off by default — the batch generator omits the "brand" field entirely rather than risk a real, currently-trading company name. When on, it's required to invent a fictional house-brand instead.
+        </div>
+        <div id="sShowBrandStatus" style="font-size:13px;font-weight:500"></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Set <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">SHOW_BRAND=true</code> in <code style="font-size:11px;background:var(--stone);padding:1px 5px;border-radius:3px">.env</code> to turn on — requires container restart to take effect.</div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -772,6 +801,7 @@ let allData = []          // [{ skin, category, items }]
 let currentCat = null     // { skin, category, items }
 let currentItem = null    // item object
 let config = {}
+let showBrand = false  // env-only flag, see /api/settings — gates every brand input/display
 let currentSiteId = null  // the catalog you're "currently working on" — see setCurrentSite()
 let selectedItems = new Set()  // objectIDs checked for deletion
 let pendingItems  = []         // items being created in the creator panel
@@ -846,8 +876,13 @@ async function reloadCatalog() {
 }
 
 async function init() {
-  const [, cfg] = await Promise.all([reloadCatalog(), fetch('/api/config').then(r => r.json())])
+  const [, cfg, settings] = await Promise.all([
+    reloadCatalog(),
+    fetch('/api/config').then(r => r.json()),
+    fetch('/api/settings').then(r => r.json()),
+  ])
   config = cfg
+  showBrand = !!settings.showBrand
   if (cfg.currentSiteId) currentSiteId = cfg.currentSiteId
   renderSiteSelect()
   renderSidebar()
@@ -1218,12 +1253,12 @@ function renderDetail() {
             placeholder="Product name"
             onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
         </div>
-        <div class="form-row">
+        ${showBrand ? `<div class="form-row">
           <label for="brandInput">Brand</label>
           <input type="text" id="brandInput" value="${escHtml(item.brand || '')}"
             placeholder="e.g. Arket, Muji"
             onkeydown="if(event.key==='Enter'){event.preventDefault();saveMeta()}">
-        </div>
+        </div>` : ''}
         <div style="display:flex;gap:8px">
           <div class="form-row" style="flex:1">
             <label for="colourInput">Colour</label>
@@ -1950,12 +1985,12 @@ function _creatorCardHtml(item) {
           oninput="pendingItems.find(p=>p._id==='${id}').name=this.value">
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div class="cf">
+      <div style="display:grid;grid-template-columns:${showBrand ? '1fr 1fr' : '1fr'};gap:6px">
+        ${showBrand ? `<div class="cf">
           <label for="${id}-brand">Brand</label>
           <input id="${id}-brand" value="${escHtml(item.brand||'')}" placeholder="Brand"
             oninput="pendingItems.find(p=>p._id==='${id}').brand=this.value">
-        </div>
+        </div>` : ''}
         <div class="cf">
           <label for="${id}-cat">Category</label>
           <select id="${id}-cat" onchange="pendingItems.find(p=>p._id==='${id}').category=this.value">
@@ -3454,8 +3489,9 @@ let _routes = []
 async function _loadSettingsTab() {
   try {
     const s = await fetch('/api/settings').then(r => r.json())
-    document.getElementById('sCatalogPath').value  = s.catalogPath  ?? ''
-    document.getElementById('sImagesPath').value   = s.imagesPath   ?? ''
+    document.getElementById('sCatalogHostPath').value = s.catalogHostPathConfigured ?? ''
+    document.getElementById('sImagesHostPath').value  = s.imagesHostPathConfigured  ?? ''
+    _renderHostPathStatus(s)
 
     _routes = s.routes ?? []
     const providerEl = document.getElementById('sProvider')
@@ -3467,6 +3503,13 @@ async function _loadSettingsTab() {
     document.getElementById('sTextModelFast').value = s.textModelFast ?? ''
     document.getElementById('sImageModel').value    = s.imageModel    ?? ''
     _renderRouteKeys()
+
+    showBrand = !!s.showBrand
+    const brandEl = document.getElementById('sShowBrandStatus')
+    if (brandEl) {
+      brandEl.textContent = showBrand ? 'On — inventing fictional house-brand names' : 'Off — no brand field generated'
+      brandEl.style.color = showBrand ? 'var(--green)' : 'var(--muted)'
+    }
   } catch (err) {
     console.error('Settings load failed:', err)
   }
@@ -3657,6 +3700,52 @@ async function saveModels() {
     msg.style.display = 'block'
     setTimeout(() => { msg.style.display = 'none'; msg.textContent = '' }, 2000)
   }
+}
+
+// "Currently mounted from" reflects what this running container actually has — the
+// editable inputs reflect what's staged in .env, which can differ until a recreate.
+function _renderHostPathStatus(s) {
+  document.getElementById('sCatalogHostPathActive').textContent =
+    'Currently mounted from: ' + (s.catalogHostPathActive || 'this project (./data/catalog)')
+  document.getElementById('sImagesHostPathActive').textContent =
+    'Currently mounted from: ' + (s.imagesHostPathActive || 'this project (./data/images)')
+  document.getElementById('sHostPathBanner').style.display = s.restartRequired ? 'block' : 'none'
+}
+
+async function _postHostPaths(patch) {
+  const err = document.getElementById('sHostPathErr')
+  const msg = document.getElementById('sHostPathMsg')
+  err.style.display = 'none'; err.textContent = ''
+  const res = await fetch('/api/settings/host-paths', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    err.textContent = body.error ?? 'Could not save'
+    err.style.display = 'block'
+    return
+  }
+  const data = await res.json()
+  _renderHostPathStatus(data)
+  msg.textContent = 'Saved'
+  msg.style.display = 'block'
+  setTimeout(() => { msg.style.display = 'none'; msg.textContent = '' }, 2000)
+}
+
+// Resets and saves in one click — it only ever sends the one field being reset, so the
+// other path (if the operator has one staged) is left alone.
+async function resetHostPathField(which) {
+  const id = which === 'catalog' ? 'sCatalogHostPath' : 'sImagesHostPath'
+  document.getElementById(id).value = ''
+  await _postHostPaths({ [which === 'catalog' ? 'catalogHostPath' : 'imagesHostPath']: '' })
+}
+
+async function saveHostPaths() {
+  await _postHostPaths({
+    catalogHostPath: document.getElementById('sCatalogHostPath').value.trim(),
+    imagesHostPath:  document.getElementById('sImagesHostPath').value.trim(),
+  })
 }
 </script>
 </body>

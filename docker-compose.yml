@@ -4,15 +4,15 @@ services:
       context: .
       target: runtime
     ports:
-      # Published to all interfaces, reachable from other devices on the LAN — a deliberate
-      # choice, not an oversight: /api/* is unauthenticated (it's the local UI's own
-      # backend — see requireAuth in server.ts) and includes destructive routes and ones
-      # that trigger billed OpenAI/Anthropic calls, so anyone else on this network can also
-      # reach those. Only acceptable on a trusted home/private network. If that ever isn't
-      # true, restrict this back to "127.0.0.1:${PORT:-3004}:3004" and reach the UI only
-      # from the Docker host — /catalog/* (token-gated via STUDIO_API_TOKEN) stays the safe
-      # way for other devices/services to consume the catalog either way.
-      - "${PORT:-3004}:3004"
+      # Loopback by default: the container is reachable from this machine only. /api/* is
+      # unauthenticated (it's the local UI's own backend — see requireAuth in server.ts) and
+      # includes destructive routes and ones that trigger billed OpenAI/Anthropic calls, so
+      # this must never be reachable from the open internet. Override BIND_ADDRESS=0.0.0.0
+      # in your own .env (gitignored, never pushed) if you need to reach it from another
+      # device on your own trusted network — the committed default stays loopback-only.
+      # /catalog/* (token-gated via STUDIO_API_TOKEN) stays the safe way for other
+      # devices/services to consume the catalog either way.
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-3004}:3004"
     env_file: .env
     security_opt:
       - no-new-privileges:true
@@ -30,6 +30,11 @@ services:
     # sibling project) so a different local tool can be pointed at the same files instead.
     volumes:
       - ./src:/app/src
+      # Lets Settings write CATALOG_HOST_PATH/IMAGES_HOST_PATH back to the file
+      # docker-compose itself reads them from — see the ENV_PATH comment in api.ts. Only
+      # takes effect on the next `docker compose up`/`--force-recreate`, same as any other
+      # edit to this file.
+      - ./.env:/app/.env
       - ${CATALOG_HOST_PATH:-./data/catalog}:/app/data/catalog
       - ${IMAGES_HOST_PATH:-./data/images}:/app/data/images
       - ./data/backups:/app/data/backups

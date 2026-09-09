@@ -33,6 +33,22 @@ const SITES    = process.env.SITES_PATH    || join(__dirname, 'sites.json')
 const MANIFEST = join(IMAGES, 'generated.json')
 const BACKUPS  = join(ROOT, 'data/backups')
 const EXPORTS  = join(ROOT, 'data/exports')
+// The .env file itself, so Settings can edit CATALOG_HOST_PATH/IMAGES_HOST_PATH — the
+// docker-compose bind-mount source. This is deliberately not the same value CATALOG/IMAGES
+// above resolve from (process.env.CATALOG_PATH): CATALOG_PATH is the in-container mount
+// point (always /app/data/catalog, however it got there) while CATALOG_HOST_PATH is the
+// host-side source docker-compose substitutes into `volumes:`. A container can't remount
+// itself, so writing here only stages the value for the *next* `docker compose up`/
+// `--force-recreate` — see readHostPathEnv()/writeHostPathEnv() below.
+const ENV_PATH = process.env.ENV_FILE_PATH || join(ROOT, '.env')
+// Off by default: asked for "realistic" catalog items with no other constraint, the batch
+// generator reaches for real, recognizable brand names (Hermès, Kohler, ...) — that already
+// happened once, in the sibling greeter project's demo catalog. When off, /generate-items
+// drops "brand" from the schema entirely (nothing to strip downstream, nothing to leak into
+// generated description prose). When on, the model is required to invent a fictional
+// house-brand name instead — "on" must never mean "generate real brand data." Same env var
+// name as the sibling projects' equivalent flag, kept consistent on purpose.
+const SHOW_BRAND = process.env.SHOW_BRAND === 'true'
 
 // Seed values only — used the first time sites.json doesn't exist yet. After that,
 // sites (aka "skins") and their categories live entirely in sites.json so new
@@ -246,6 +262,40 @@ function saveConfig(patch: Record<string, string>) {
   return next
 }
 
+// Reads CATALOG_HOST_PATH/IMAGES_HOST_PATH as currently written in .env on disk — the value
+// that will apply on the *next* container recreate, which may differ from process.env's
+// (the value the running container was actually started with). Missing/unreadable .env
+// reads as both unset, matching the "self-contained in this checkout" default.
+const HOST_PATH_KEYS = ['CATALOG_HOST_PATH', 'IMAGES_HOST_PATH'] as const
+type HostPathKey = typeof HOST_PATH_KEYS[number]
+
+function readEnvHostPaths(): Record<HostPathKey, string> {
+  let text = ''
+  try { text = readFileSync(ENV_PATH, 'utf-8') } catch { /* no .env on disk → both unset */ }
+  const out = { CATALOG_HOST_PATH: '', IMAGES_HOST_PATH: '' } as Record<HostPathKey, string>
+  for (const line of text.split('\n')) {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(line)
+    if (m && HOST_PATH_KEYS.includes(m[1] as HostPathKey)) out[m[1] as HostPathKey] = m[2].trim()
+  }
+  return out
+}
+
+// Rewrites one KEY=value line in .env in place, preserving every other line (comments
+// included) untouched; appends the line if the key isn't present yet. Values are host
+// filesystem paths a human typed into Settings, not shell input — never executed — but a
+// newline would still split into a bogus second line, so callers reject those before this
+// is called.
+function writeEnvHostPath(key: HostPathKey, value: string) {
+  let text = ''
+  try { text = readFileSync(ENV_PATH, 'utf-8') } catch { /* first write creates it below */ }
+  const lines = text.length ? text.split('\n') : []
+  const pattern = new RegExp(`^${key}=`)
+  const idx = lines.findIndex(l => pattern.test(l))
+  if (idx >= 0) lines[idx] = `${key}=${value}`
+  else lines.push(`${key}=${value}`)
+  writeFileSync(ENV_PATH, lines.join('\n'))
+}
+
 // Parses a price value. Returns 0 if absent, the parsed number if valid, or null if the
 // caller sent something non-numeric — callers should 400 on null rather than silently
 // storing NaN (which JSON.stringify would then serialize as null, corrupting the item).
@@ -260,7 +310,7 @@ function parsePrice(val: unknown): number | null {
 interface CatalogItem {
   objectID: string
   name: string
-  brand: string
+  brand?: string  // absent when generated with SHOW_BRAND off — see the flag's own comment
   price: number
   currency: string
   category: string
@@ -732,9 +782,23 @@ imageGenRoutes.post('/config', async c => {
 })
 imageGenRoutes.get('/settings', c => {
   const config = loadConfig()
+  const envPaths = readEnvHostPaths()
   return c.json({
     catalogPath:   CATALOG,
     imagesPath:    IMAGES,
+    // env-only, like the API key booleans below — not part of config.json, no live toggle.
+    showBrand: SHOW_BRAND,
+    // The bind-mount source, not the in-container mount point above (which is always
+    // /app/data/catalog regardless of what's mounted there — see the ENV_PATH comment).
+    // "Active" is what this running container was actually started with; "configured" is
+    // what's on disk in .env right now, which can differ after an edit until the next
+    // recreate. restartRequired flags that mismatch so the UI can prompt for it.
+    catalogHostPathActive:      process.env.CATALOG_HOST_PATH || '',
+    imagesHostPathActive:       process.env.IMAGES_HOST_PATH  || '',
+    catalogHostPathConfigured:  envPaths.CATALOG_HOST_PATH,
+    imagesHostPathConfigured:   envPaths.IMAGES_HOST_PATH,
+    restartRequired: envPaths.CATALOG_HOST_PATH !== (process.env.CATALOG_HOST_PATH || '')
+                   || envPaths.IMAGES_HOST_PATH  !== (process.env.IMAGES_HOST_PATH  || ''),
     provider:      config.provider,
     textModel:     config.textModel,
     textModelFast: config.textModelFast,
@@ -749,6 +813,30 @@ imageGenRoutes.get('/settings', c => {
     })),
     anthropicKey: !!process.env.ANTHROPIC_API_KEY,
     openaiKey:    !!process.env.OPENAI_API_KEY,
+  })
+})
+// Stages CATALOG_HOST_PATH/IMAGES_HOST_PATH into .env for the *next* container recreate —
+// see the ENV_PATH comment on why this can't take effect live. An empty string is a valid
+// value (resets to this project's own ./data/catalog, ./data/images, same as leaving it
+// blank in .env by hand). The only validation is against corrupting the .env file itself;
+// this route carries the same "unauthenticated, LAN-reachable" trust boundary as the rest
+// of /api, same as provider/model above — nothing it writes takes effect without a human
+// running the recreate.
+imageGenRoutes.post('/settings/host-paths', async c => {
+  const body = await c.req.json().catch(() => ({}))
+  for (const [field, key] of [['catalogHostPath', 'CATALOG_HOST_PATH'], ['imagesHostPath', 'IMAGES_HOST_PATH']] as const) {
+    if (!(field in body)) continue
+    const value = String(body[field] ?? '')
+    if (/[\r\n]/.test(value)) return c.json({ error: `${field} must not contain newlines` }, 400)
+    writeEnvHostPath(key, value)
+  }
+  const envPaths = readEnvHostPaths()
+  return c.json({
+    ok: true,
+    catalogHostPathConfigured: envPaths.CATALOG_HOST_PATH,
+    imagesHostPathConfigured:  envPaths.IMAGES_HOST_PATH,
+    restartRequired: envPaths.CATALOG_HOST_PATH !== (process.env.CATALOG_HOST_PATH || '')
+                   || envPaths.IMAGES_HOST_PATH  !== (process.env.IMAGES_HOST_PATH  || ''),
   })
 })
 
@@ -1111,11 +1199,17 @@ imageGenRoutes.post('/generate-items', async c => {
   const styleInstruction = styleHint
     ? `The user suggested "${styleHint}" as style. Include this and infer parallel styles that fit.`
     : `Infer all appropriate style tags from the product type and description.`
+  // Off (default): no "brand" key in the schema at all — nothing generated, nothing to leak
+  // into the description prompt downstream. On: the model must invent one; "realistic" in the
+  // rest of this prompt is exactly what pulls it toward a real company name otherwise.
+  const brandField = SHOW_BRAND
+    ? '"brand": "an invented, fictional house-brand name — never a real, currently-trading company", '
+    : ''
   const system = `You generate product catalog items for a retail website.
 Output a JSON array of items matching the user's description.
 Valid categories: ${validCats.join(', ')}
 Each item must have EXACTLY these fields:
-{ "name": "...", "brand": "...", "category": "...", "fit": "mens"|"womens"|"unisex", "style": "casual"|"smart-casual", "tags": [...], "colourHex": "#rrggbb", "colourFamily": "...", "price": ${priceInstruction} }
+{ "name": "...", ${brandField}"category": "...", "fit": "mens"|"womens"|"unisex", "style": "casual"|"smart-casual", "tags": [...], "colourHex": "#rrggbb", "colourFamily": "...", "price": ${priceInstruction} }
 "style" is the item's overall dress-code register — "casual" for everyday/relaxed pieces (flannel shirts, weekend wear, denim, athleisure), "smart-casual" for more polished pieces (blazers, tailored trousers, dress shoes). Judge it from the product itself, independent of whatever the user's prompt says about descriptive tags below.
 Style tag instructions (these are separate descriptive tags, not the "style" field above): ${styleInstruction}
 Output ONLY a valid JSON array. No markdown, no prose.`
@@ -2155,6 +2249,7 @@ export {
   slugify, parseTagList, parsePrice, autoPrompt, enrich, emptyFixture,
   sitesSharingCategory, fixtureFilename, nextObjectID, getAllCatRefs, getAllCats,
   loadSites, saveSites, loadConfig, loadFixture, saveFixture, loadManifest,
+  readEnvHostPaths, writeEnvHostPath,
   safeFilename, sanitizeId, safeMapId,
   setNestedValue, getNestedValue, resolveSourceValue, resolveFileUrl,
   transformValue, applyExportMap, extractPaths, toStoredSchema,
