@@ -372,6 +372,20 @@ describe('POST /api/generate-items', () => {
     expect(system).not.toContain('brand')
   })
 
+  // Leaving it out of the schema is a request, not a guarantee — models routinely return
+  // fields nobody asked for, and the one this returns is a real trademark. The flag has to
+  // hold on the way back too, or "off" means "usually off".
+  it('drops a brand the model returns anyway when SHOW_BRAND is off', async () => {
+    stub.on(ANTHROPIC, () => anthropicText(JSON.stringify([
+      { name: 'Zellige', brand: "Levi's", category: 'tile', fit: 'unisex',
+        style: 'casual', tags: ['matte'], colourHex: '#aabbcc', colourFamily: 'blue', price: 40 },
+    ])))
+    const res = await app.request('/api/generate-items', json({ prompt: 'x', site: 'home' }))
+    const { items } = await res.json() as any
+    expect(items[0].name).toBe('Zellige')
+    expect(items[0]).not.toHaveProperty('brand')
+  })
+
   it('falls back to every known category when the site is unknown', async () => {
     stub.on(ANTHROPIC, () => anthropicText('[]'))
     await app.request('/api/generate-items', json({ prompt: 'x', site: 'nope' }))

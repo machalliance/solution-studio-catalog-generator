@@ -260,6 +260,21 @@ describe('POST /api/:objectID/tweak/accept|discard', () => {
 })
 
 describe('POST /api/items/batch', () => {
+  // SHOW_BRAND is off in this file's env — the shipped default. Batch is the route the
+  // generated items come back through, so it is the last place a real trademark the model
+  // volunteered can be stopped before it reaches disk and, from there, the description and
+  // image prompts. See show-brand.test.ts for the SHOW_BRAND=true side.
+  it('does not persist a brand when SHOW_BRAND is off', async () => {
+    const res = await app.request('/api/items/batch', json({
+      site: 'clothing',
+      items: [{ category: 'pants', name: 'Wide Leg', brand: "Levi's", price: 120 }],
+    }))
+    expect(res.status).toBe(200)
+    const stored = readFixtureFile(ws, 'algolia-pants.json').hits[0]
+    expect(stored.name).toBe('Wide Leg')
+    expect(stored).not.toHaveProperty('brand')
+  })
+
   it('adds every valid item and reports the ids it assigned', async () => {
     const res = await app.request('/api/items/batch', json({
       site: 'clothing',

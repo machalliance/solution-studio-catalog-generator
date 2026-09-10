@@ -75,4 +75,10 @@ USER node
 EXPOSE 3004
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
   CMD wget -qO- http://localhost:3004/health || exit 1
-CMD ["node_modules/.bin/tsx", "watch", "src/server.ts"]
+# No `watch`. docker-compose.yml bind-mounts ./src read-write (it has to — config.json and
+# sites.json are written at runtime and live under src/products/), and /api/backups/:f/restore
+# extracts a snapshot over that same tree with no check on what the archive contains. A file
+# watcher turns "an untrusted snapshot overwrote src/server.ts" into "an untrusted snapshot is
+# now running": it reloads the overwritten file on its own. Restarting the container is the
+# cost of an edit; re-executing whatever landed in src/ is not a cost worth paying for it.
+CMD ["node_modules/.bin/tsx", "src/server.ts"]

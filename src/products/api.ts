@@ -50,6 +50,16 @@ const ENV_PATH = process.env.ENV_FILE_PATH || join(ROOT, '.env')
 // name as the sibling projects' equivalent flag, kept consistent on purpose.
 const SHOW_BRAND = process.env.SHOW_BRAND === 'true'
 
+// Returns the item without its "brand" key. Used on both model-output paths when the flag
+// is off — the prompt already omits the field, and this is what makes that stick when the
+// model answers with one regardless. Deliberately not applied to the hand-entry routes
+// (POST /items, PATCH /:objectID/meta): the flag governs what gets *generated*, a value an
+// operator typed is their own, and the UI hides those inputs when the flag is off anyway.
+function stripBrand<T extends Record<string, any>>(item: T): Omit<T, 'brand'> {
+  const { brand: _brand, ...rest } = item
+  return rest
+}
+
 // Seed values only — used the first time sites.json doesn't exist yet. After that,
 // sites (aka "skins") and their categories live entirely in sites.json so new
 // verticals can be added at runtime without a code change.
@@ -1219,7 +1229,11 @@ Output ONLY a valid JSON array. No markdown, no prose.`
     if (!match) throw new Error('No JSON array in response')
     const items = JSON.parse(match[0])
     if (!Array.isArray(items)) throw new Error('Not an array')
-    return c.json({ ok: true, items })
+    // Leaving "brand" out of the schema above is a request, not a guarantee — a model asked
+    // for a realistic retail catalog volunteers fields nobody asked for, and the one it
+    // volunteers here is a real trademark. Drop it on the way back so "off" is enforced
+    // rather than hoped for; /items/batch drops it again at the point of persistence.
+    return c.json({ ok: true, items: SHOW_BRAND ? items : items.map(stripBrand) })
   } catch (err: any) { return c.json({ error: err.message }, 500) }
 })
 
@@ -1289,7 +1303,12 @@ imageGenRoutes.post('/items/batch', async c => {
       }
     }
     const newItem: CatalogItem = {
-      objectID, name: item.name, brand: item.brand || '',
+      objectID, name: item.name,
+      // Batch is where generated items land, so it is the last point a brand the model
+      // volunteered can be stopped before it reaches disk — and from disk, the description
+      // and image prompts that read item.brand back out. Off means the key is absent, not
+      // empty, matching the CatalogItem type's own note.
+      ...(SHOW_BRAND ? { brand: item.brand || '' } : {}),
       price: parsedPrice,
       currency: item.currency || 'USD', category: cat, style: normalizeStyle(item.style),
       fit: item.fit || 'unisex', tags: tagList, colourHex: item.colourHex || '#888888',
