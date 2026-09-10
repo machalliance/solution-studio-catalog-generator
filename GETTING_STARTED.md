@@ -119,7 +119,7 @@ All bind-mounted from the checkout under Docker, so you can read and edit them f
 
 **Empty catalog after mounting existing data** — check `CATALOG_PATH` and `IMAGES_PATH`.
 
-**Changes to `src/` not showing up** — they should; the container bind-mounts `src/` and runs `tsx watch`. Only a new npm dependency needs `docker compose up --build`.
+**Changes to `src/` not showing up** — the container bind-mounts `src/`, but it does not watch it: run `docker compose restart` to pick up an edit. (There is no file watcher in the runtime image on purpose — see the note on `CMD` in the Dockerfile.) A new npm dependency needs `docker compose up --build`.
 
 ## Next
 
