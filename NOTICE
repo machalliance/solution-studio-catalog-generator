@@ -9,6 +9,16 @@ It does not extend to:
   prompt requires an invented, fictional house-brand name — see the SHOW_BRAND entry in
   README.md and .env.example — but model output isn't guaranteed with certainty. Verify a
   batch before publishing it anywhere if you've turned the flag on.
+- Product imagery, all of it AI-generated (`gpt-image-1` by default) and fictional, and
+  capable of reproducing a real product's trade dress or a recognisable design even without
+  a real brand name attached. Nothing about an image or its filename marks it as
+  AI-generated — that context lives only here. Treat every generated image the same way as
+  generated brand names: verify before publishing, and don't present it as real product
+  photography.
+- The third-party names used as built-in export template identifiers — Algolia,
+  BigCommerce, and Coveo (`src/products/api.ts`, `EXPORT_TEMPLATES`) — and the field names
+  those templates reproduce from each vendor's own documentation. This is nominative use,
+  not a claim of affiliation, endorsement, or partnership with any of them.
 
 ## Third-party attribution
 
