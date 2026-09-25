@@ -88,6 +88,27 @@ describe('GET /images/:filename', () => {
       expect(await res.text()).not.toContain('do not serve me')
     }
   })
+
+  it('serves .jpeg and .webp with their own types, case-insensitively', async () => {
+    await writeImage(ws, 'a.jpeg')
+    await writeImage(ws, 'b.webp')
+    await writeImage(ws, 'C.PNG')
+
+    expect((await app.request('/images/a.jpeg')).headers.get('content-type')).toBe('image/jpeg')
+    expect((await app.request('/images/b.webp')).headers.get('content-type')).toBe('image/webp')
+    expect((await app.request('/images/C.PNG')).headers.get('content-type')).toBe('image/png')
+  })
+
+  // IMAGES_HOST_PATH can point the mount at any host directory (e.g. ~/.ssh), so a file
+  // that exists in it is not enough — only image extensions are ever served.
+  it('refuses a non-image file even when it exists in the images directory', async () => {
+    for (const name of ['id_rsa', 'credentials', '.env', 'config.json', 'notes.txt', 'key.pem', 'x.jpg.txt']) {
+      writeFileSync(join(ws.images, name), 'do not serve me')
+      const res = await app.request(`/images/${encodeURIComponent(name)}`)
+      expect(res.status, name).toBe(404)
+      expect(await res.text()).not.toContain('do not serve me')
+    }
+  })
 })
 
 // /api/* has no bearer token — it is the local UI's own backend — so the same-origin

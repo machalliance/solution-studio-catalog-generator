@@ -26,9 +26,12 @@ this list before you rely on any of it.
   `POST /api/settings/host-paths` writes `CATALOG_HOST_PATH`/`IMAGES_HOST_PATH` to `.env`
   with no restriction on the value — by design, since pointing this at any local project's
   data is the feature's actual purpose, not an edge case to close off. That value becomes
-  the Docker bind-mount source on the next container recreate, and `GET /images/:filename`
-  then serves whatever's in it. Reachable by anything that can reach `/api/*`. Don't widen
-  `BIND_ADDRESS` beyond a network you'd trust with that.
+  the Docker bind-mount source on the next container recreate. `GET /images/:filename`
+  serves only image extensions (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`), so a mount
+  pointed at, say, `~/.ssh` doesn't turn it into a download route for the keys in it —
+  but the app can still write and delete image files in whatever directory is mounted.
+  Reachable by anything that can reach `/api/*`. Don't widen `BIND_ADDRESS` beyond a
+  network you'd trust with that.
 - **Snapshot restore extracts a `.tar.gz` with no check on its contents**
   (`POST /:filename/restore`), which can overwrite application source or `.env`. There is no
   upload route for backups — the only way an untrusted archive reaches `data/backups/` is if
