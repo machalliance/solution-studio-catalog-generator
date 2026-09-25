@@ -79,14 +79,24 @@ app.onError((err, c) => {
 app.get('/health', c => c.json({ ok: true, ts: new Date().toISOString() }))
 
 // Images — serve from data/images/
+// Image extensions only. IMAGES_HOST_PATH can point the images mount at any directory on
+// the host (Settings → host paths, by design — see SECURITY.md), so without this the route
+// would serve whatever that directory holds: IMAGES_HOST_PATH=~/.ssh turns
+// GET /images/id_rsa into a private-key download. The ".." check can't help there, since
+// it's the mount root itself that moved. Nothing this route legitimately serves is
+// anything but an image.
+const IMAGE_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+}
 app.get('/images/:filename', c => {
   const filename = c.req.param('filename')
   if (!filename || filename.includes('..')) return c.text('Not found', 404)
+  const ext = filename.includes('.') ? filename.split('.').pop()!.toLowerCase() : ''
+  const mime = IMAGE_MIME[ext]
+  if (!mime) return c.text('Not found', 404)
   const p = join(IMAGES, filename)
   if (!existsSync(p)) return c.text('Not found', 404)
   const buf = readFileSync(p)
-  const ext = filename.split('.').pop()?.toLowerCase()
-  const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg'
   return new Response(buf, { headers: { 'Content-Type': mime, 'Cache-Control': 'no-cache' } })
 })
 
