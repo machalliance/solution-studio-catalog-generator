@@ -1,0 +1,25 @@
+# Dependabot version updates. Dependabot alerts and security updates are switched on in the
+# repository's GitHub settings (Settings > Advanced Security), not in this file.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # The base images in the Dockerfile.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+
+  # The actions used by .github/workflows/ci.yml.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
