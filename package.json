@@ -35,7 +35,7 @@
     "@ai-sdk/gateway": "^4.0.63",
     "@ai-sdk/openai": "^4.0.46",
     "@ai-sdk/openai-compatible": "^3.0.36",
-    "@hono/node-server": "^1.13.7",
+    "@hono/node-server": "^2.1.5",
     "@openrouter/ai-sdk-provider": "^3.0.0",
     "ai": "^7.0.78",
     "archiver": "^7.0.1",
