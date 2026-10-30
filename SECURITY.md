@@ -1,4 +1,16 @@
-# Security
+# Security Policy
+
+## Reporting a Vulnerability
+
+We take the security of this project seriously and welcome responsible disclosure of potential security vulnerabilities.
+
+If you believe you have discovered a security vulnerability, please use GitHub's **Report a vulnerability** feature under the repository's **Security** tab.
+
+Please do not disclose vulnerabilities through public GitHub issues, discussions, or pull requests.
+
+Our security team will review submitted reports, assess their impact, and coordinate remediation as appropriate.
+
+We appreciate the contributions of the security research community in helping us maintain a secure project.
 
 ## No transport encryption
 
@@ -53,11 +65,3 @@ this list before you rely on any of it.
 This is a prototype under active development on a single branch (`main`) — there is no
 version-support matrix. Security fixes land on `main`; there are no backported patches to
 older tags.
-
-## Reporting a vulnerability
-
-Please do not open a public issue for a vulnerability. Report it privately through
-[GitHub's security advisories](../../security/advisories/new) for this repository. Include
-what you found, the affected route or file, and steps to reproduce if you have them.
-
-You should get an initial response within a few business days.
