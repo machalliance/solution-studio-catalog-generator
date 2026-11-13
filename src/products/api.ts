@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { lookup } from 'node:dns/promises'
-import archiver from 'archiver'
+import { ZipArchive } from 'archiver'
 import sharp from 'sharp'
 import { generateText, generateImage } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
@@ -2210,7 +2210,7 @@ imageGenRoutes.post('/exports/:id/download', async c => {
     imageEntries.set(inZipPath, join(IMAGES, filename))
   }
 
-  const archive = archiver('zip', { zlib: { level: 9 } })
+  const archive = new ZipArchive({ zlib: { level: 9 } })
   const chunks: Buffer[] = []
   archive.on('data', (chunk: Buffer) => chunks.push(chunk))
   const finished = new Promise<void>((resolve, reject) => {
