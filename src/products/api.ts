@@ -135,8 +135,10 @@ function nextObjectID(category: string): string {
   let maxNum = 0
   for (const siteId of siteIds) {
     for (const h of loadFixture(siteId, category)?.hits ?? []) {
-      const n = parseInt((h.objectID as string).split('-')[1] ?? '0', 10)
-      if (!isNaN(n)) maxNum = Math.max(maxNum, n)
+      // The number is the trailing digits: a category name can itself contain hyphens
+      // ("wall-tile-003"), so splitting on the first one would read "tile" and restart at 001.
+      const m = /-(\d+)$/.exec(String(h.objectID))
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
     }
   }
   return `${category}-${String(maxNum + 1).padStart(3, '0')}`

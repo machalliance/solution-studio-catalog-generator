@@ -64,6 +64,16 @@ describe('POST /api/items', () => {
     expect((await res.json() as any).item.objectID).toBe('tile-002')
   })
 
+  it('numbers items sequentially in a category whose name has hyphens', async () => {
+    writeSites(ws, [{ id: 'home', categories: ['wall-tile'] }])
+    const ids: string[] = []
+    for (const name of ['One', 'Two', 'Three']) {
+      const res = await app.request('/api/items', json({ site: 'home', category: 'wall-tile', name }))
+      ids.push((await res.json() as any).item.objectID)
+    }
+    expect(ids).toEqual(['wall-tile-001', 'wall-tile-002', 'wall-tile-003'])
+  })
+
   it('requires site, category and name', async () => {
     for (const body of [
       { category: 'tile', name: 'x' }, { site: 'home', name: 'x' }, { site: 'home', category: 'tile' },

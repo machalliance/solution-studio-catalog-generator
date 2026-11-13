@@ -86,6 +86,15 @@ describe('nextObjectID', () => {
     expect(nextObjectID('orphan')).toBe('orphan-006')
   })
 
+  // A hyphenated category name used to read its second word as the number ("tile" in
+  // "wall-tile-003"), find none, and hand out -001 again, so every item in the category
+  // shared one objectID and each generated image overwrote the last.
+  it('continues past the highest suffix for a category whose name has hyphens', () => {
+    writeSites(ws, [{ id: 'home', categories: ['wall-tile'] }])
+    writeFixtureFile(ws, 'algolia-wall-tile.json', [item({ objectID: 'wall-tile-001' }), item({ objectID: 'wall-tile-003' })])
+    expect(nextObjectID('wall-tile')).toBe('wall-tile-004')
+  })
+
   it('pads past three digits without truncating', () => {
     writeSites(ws, [{ id: 'clothing', categories: ['pants'] }])
     writeFixtureFile(ws, 'algolia-pants.json', [item({ objectID: 'pants-999' })])
