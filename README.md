@@ -11,7 +11,7 @@ It's built for people building demos and integrations, not for running a real st
 ## What it does
 
 - **Generates product data** — single items by hand, or a batch of items from a natural-language prompt ("12 minimalist ceramic vases, $40–120") via whichever text model is configured. Brand names are off by default: a model asked for "realistic" items with no other constraint reaches for real, currently-trading companies, which is a real problem for demo data meant to ship in a published reference implementation. Set `SHOW_BRAND=true` (see **Environment variables**) to have it invent a fictional house-brand instead — never a real one — or leave it off to omit the field entirely. See [NOTICE](NOTICE) for how this relates to the license.
-- **Generates product images** — via the configured image model (`openai/gpt-image-1` by default; set in Settings, and reachable directly or through a gateway — see **Models and providers**), using a base image prompt per catalog plus a per-product description. An existing image can also be edited in place ("Tweak") rather than regenerated from scratch. Every generated image is post-processed to force a genuinely pure `#ffffff` background — the model consistently renders "white" a few units off no matter how the prompt is worded, so this is pixel correction (a tolerant flood-fill from the image edges), not prompt engineering. See the `whitenBackground()` implementation notes in `api.ts` for how it avoids bleeding into white/light-colored products.
+- **Generates product images** — via the configured image model (`openai/gpt-image-1` by default, or a Gemini image model; set in Settings, and reachable directly or through a gateway — see **Models and providers**), using a base image prompt per catalog plus a per-product description. An existing image can also be edited in place ("Tweak") rather than regenerated from scratch. Every generated image is post-processed to force a genuinely pure `#ffffff` background — the model consistently renders "white" a few units off no matter how the prompt is worded, so this is pixel correction (a tolerant flood-fill from the image edges), not prompt engineering. See the `whitenBackground()` implementation notes in `api.ts` for how it avoids bleeding into white/light-colored products.
 - **Organizes products into catalogs and categories** — a "catalog" (called a *site* internally) is a top-level vertical like Clothing or Home, each with its own categories and its own base image prompt. The same category name can exist independently in two different catalogs.
 - **Builds export field maps** — define how your catalog's fields map onto a target system's schema (dotted paths, array grouping, transforms, computed fields), preview the result against a real product, then run or download it as JSON + a zip of the referenced images.
 - **Exposes a read-only (+ limited write) REST API** for other services to consume the catalog directly, separate from the local web UI.
@@ -23,7 +23,7 @@ It's built for people building demos and integrations, not for running a real st
 - **No live external catalog source.** You can't point this app at another live system and have it transparently read/write through that connection — the whole data layer is synchronous local-file I/O, and wiring in a genuinely external source would mean converting most of `api.ts` to async. See the code comments in `api.ts` under `loadFixture`/`saveFixture` for the specifics of why, and the smaller "one-time import" alternative that was scoped but not built.
 - **No authentication on the local UI's own API.** `/api/*` (everything the web UI itself calls — image generation, edits, deletes, backup restore) is unauthenticated by design, since this is meant to run locally for one person. Don't expose that port to anything but `localhost` without adding auth. The separate `/catalog/*` surface (for other services to consume) *is* token-gated — see **Auth** below.
 - **No end-to-end guarantee of what the AI produces.** There is an automated test suite (`npm test`, plus Playwright specs under `test/e2e`), but it stubs every outbound model call — it checks what the app does with a response, not the quality of the response itself.
-- **Image generation costs real money** (OpenAI billing) and there's no built-in spend tracking — keep an eye on your OpenAI usage dashboard.
+- **Image generation costs real money** (OpenAI or Google billing) and there's no built-in spend tracking — keep an eye on your provider's usage dashboard.
 
 ---
 
@@ -94,14 +94,16 @@ Every model call goes through the Vercel AI SDK, so which models you use and how
 
 | Route | Reaches | Needs |
 | --- | --- | --- |
-| `direct` | OpenAI and Anthropic themselves | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` |
+| `direct` | OpenAI, Anthropic and Google (the Gemini API) themselves | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_GENERATIVE_AI_API_KEY` |
 | `gateway` | Vercel AI Gateway | `AI_GATEWAY_API_KEY` |
 | `openrouter` | OpenRouter | `OPENROUTER_API_KEY` |
 | `compatible` | Any OpenAI-compatible endpoint — a proxy, LiteLLM, an internal gateway | `LLM_BASE_URL` (required), `LLM_API_KEY` |
 
 On `direct` the `provider/` prefix picks the vendor and is stripped before the call; on every other route the qualified ID is passed through as-is, which is the form those services already expect. Adding a route means adding one entry to `PROVIDER_ROUTES` in `api.ts` — the settings endpoint, the validator, and the UI dropdown are all generic over it.
 
-**One provider is enough** — `gateway`, `openrouter`, and `compatible` each cover text and images on a single key, and so does `direct` with OpenAI alone. The one exception is Anthropic: it publishes no image models, so `anthropic/*` can serve every text call in this app and no image call. Anthropic-only means either pairing it with an `openai/*` image model (the default configuration, which is why the quick start asks for both keys) or moving to one of the other routes. Selecting an Anthropic image model says exactly that rather than reporting a missing model.
+**One provider is enough** — `gateway`, `openrouter`, and `compatible` each cover text and images on a single key, and so does `direct` with OpenAI alone or with Google alone. The one exception is Anthropic: it publishes no image models, so `anthropic/*` can serve every text call in this app and no image call. Anthropic-only means either pairing it with an `openai/*` image model (the default configuration, which is why the quick start asks for both keys) or moving to one of the other routes. Selecting an Anthropic image model says exactly that rather than reporting a missing model.
+
+**Google (Gemini) on `direct`** — set all three models to `google/*` IDs and only `GOOGLE_GENERATIVE_AI_API_KEY` is needed: a Gemini text model for the text calls (e.g. `google/gemini-2.5-flash`) and a Gemini image model for the images (e.g. `google/gemini-3.1-flash-image-preview`; check Google's model list for the current IDs). Gemini's image models are Gemini models with image output: the SDK calls them through `:generateContent`, and they're used here like any other image model, at a 1:1 aspect ratio (a 1024×1024 square at their default resolution). They can also edit ("Tweak"). Imagen is not offered here: the SDK's Google image model only accepts `gemini-*` model IDs. The key is a Gemini API key (from Google AI Studio); image output is billed per image — see Google's Gemini API pricing.
 
 **Endpoints and keys are environment-only, deliberately.** `/api/*` is unauthenticated by design (see **Auth**), so anything settable through it is settable by anyone who can reach the port. A model ID is inert; a base URL is not — pointing it at another host would redirect billed calls and hand over the API key with them. So `config.json` holds a route *name* validated against a closed set, and the URL it resolves to lives in `.env`.
 
@@ -125,6 +127,7 @@ On `direct` the `provider/` prefix picks the vendor and is stripped before the c
 # Route: direct (the default) — straight at the vendors
 ANTHROPIC_API_KEY=      # required for anthropic/* models
 OPENAI_API_KEY=         # required for openai/* models
+GOOGLE_GENERATIVE_AI_API_KEY=   # required for google/* models (a Gemini API key)
 
 # Route: gateway / openrouter / compatible — set whichever you selected
 AI_GATEWAY_API_KEY=
@@ -135,6 +138,7 @@ LLM_API_KEY=
 # Optional per-route endpoint overrides (a mirror, a regional endpoint, a proxy)
 OPENAI_BASE_URL=
 ANTHROPIC_BASE_URL=
+GOOGLE_GENERATIVE_AI_BASE_URL=
 AI_GATEWAY_BASE_URL=
 OPENROUTER_BASE_URL=
 

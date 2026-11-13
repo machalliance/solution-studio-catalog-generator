@@ -1,11 +1,11 @@
 import { vi } from 'vitest'
 
 // Every outbound call in api.ts — OpenAI image generation/edit, the Anthropic Messages
-// API, and the docs-page fetch behind /exports/schema-from-url — goes through global
-// fetch. Stubbing it is what makes the LLM-backed routes testable: the interesting logic
-// isn't the network call, it's what the handlers do with the response (pulling a JSON
-// array out of prose, filtering hallucinated source fields, whitening and writing the
-// image bytes, propagating the upstream error message).
+// API, Gemini's generateContent, and the docs-page fetch behind /exports/schema-from-url —
+// goes through global fetch. Stubbing it is what makes the LLM-backed routes testable:
+// the interesting logic isn't the network call, it's what the handlers do with the
+// response (pulling a JSON array out of prose, filtering hallucinated source fields,
+// whitening and writing the image bytes, propagating the upstream error message).
 
 export interface RecordedCall {
   url: string
@@ -145,6 +145,32 @@ export function openaiChat(text: string): Response {
     choices: [{ index: 0, message: { role: 'assistant', content: text }, finish_reason: 'stop' }],
     usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
   })
+}
+
+/**
+ * A Gemini `:generateContent` response. With an image it is what a Gemini image model
+ * answers (the picture as an inlineData part); with text, what a Gemini text model does.
+ */
+function geminiResponse(parts: unknown[]): Response {
+  return jsonResponse({
+    candidates: [{ content: { role: 'model', parts }, finishReason: 'STOP', index: 0 }],
+    usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+    modelVersion: 'stub',
+    responseId: 'resp_stub',
+  })
+}
+
+export function geminiImage(pngBytes: Buffer): Response {
+  return geminiResponse([{ inlineData: { mimeType: 'image/png', data: pngBytes.toString('base64') } }])
+}
+
+export function geminiText(text: string): Response {
+  return geminiResponse([{ text }])
+}
+
+/** Google's error envelope — api.ts surfaces error.message verbatim. */
+export function geminiError(message: string, status = 400): Response {
+  return jsonResponse({ error: { code: status, message, status: 'INVALID_ARGUMENT' } }, status)
 }
 
 // ── Request readers ───────────────────────────────────────────────────────────

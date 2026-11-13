@@ -13,6 +13,7 @@ import sharp from 'sharp'
 import { generateText, generateImage } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createAnthropic } from '@ai-sdk/anthropic'
+import { createGoogle } from '@ai-sdk/google'
 import { createGateway } from '@ai-sdk/gateway'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
@@ -134,8 +135,10 @@ function nextObjectID(category: string): string {
   let maxNum = 0
   for (const siteId of siteIds) {
     for (const h of loadFixture(siteId, category)?.hits ?? []) {
-      const n = parseInt((h.objectID as string).split('-')[1] ?? '0', 10)
-      if (!isNaN(n)) maxNum = Math.max(maxNum, n)
+      // The number is the trailing digits: a category name can itself contain hyphens
+      // ("wall-tile-003"), so splitting on the first one would read "tile" and restart at 001.
+      const m = /-(\d+)$/.exec(String(h.objectID))
+      if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10))
     }
   }
   return `${category}-${String(maxNum + 1).padStart(3, '0')}`
@@ -453,8 +456,8 @@ const PROVIDER_ROUTES = {
   // the vendor APIs want the bare name — and so the only one whose prefix must be a vendor
   // this project knows how to construct.
   direct: {
-    label: 'Direct (OpenAI + Anthropic)',
-    keyVars: ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'],
+    label: 'Direct (OpenAI, Anthropic, Google)',
+    keyVars: ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'],
   },
   gateway: {
     label: 'Vercel AI Gateway',
@@ -513,8 +516,15 @@ function providerFor(route: ProviderRoute, vendor: string) {
       if (vendor === 'anthropic') {
         return createAnthropic({ apiKey: requireKey('ANTHROPIC_API_KEY'), baseURL: process.env.ANTHROPIC_BASE_URL })
       }
+      // The Gemini API (Google AI Studio keys). Its image models are Gemini models with image
+      // output — the SDK's Google image model calls :generateContent for them, so they go
+      // through generateImage like any other image model here. Imagen is not offered here:
+      // the SDK's Google image model only accepts gemini-* model IDs.
+      if (vendor === 'google') {
+        return createGoogle({ apiKey: requireKey('GOOGLE_GENERATIVE_AI_API_KEY'), baseURL: process.env.GOOGLE_GENERATIVE_AI_BASE_URL })
+      }
       throw new Error(
-        `The "direct" route only knows openai/* and anthropic/* models — got "${vendor}/…". ` +
+        `The "direct" route only knows openai/*, anthropic/* and google/* models — got "${vendor}/…". ` +
         `Use the gateway, openrouter, or compatible route to reach other vendors.`,
       )
     case 'gateway':
@@ -549,7 +559,7 @@ function resolveModel(route: ProviderRoute, modelId: string, kind: 'language' | 
       throw new Error(
         `"${vendor}" has no ${kind} model "${name}" on the "${route}" route. ` +
         (kind === 'image' && vendor === 'anthropic'
-          ? 'Anthropic does not offer image models — set the image model to an openai/* one, ' +
+          ? 'Anthropic does not offer image models — set the image model to an openai/* or google/* one, ' +
             'or use the gateway, openrouter, or compatible route.'
           : 'Check the model ID.'),
       )
@@ -600,11 +610,14 @@ async function callImageModel(prompt: string, modelId: string): Promise<string> 
   // option so a non-OpenAI model never receives it.
   const quality = name === 'dall-e-3' ? 'standard' : name.startsWith('dall-e') ? undefined : 'medium'
   const providerOptions = vendor === 'openai' && quality ? { openai: { quality } } : undefined
+  // Gemini image models take an aspect ratio rather than pixel dimensions (a `size` is
+  // ignored with a warning). 1:1 at their default resolution is the same 1024x1024 square.
+  const dimensions = vendor === 'google' ? { aspectRatio: '1:1' as const } : { size: '1024x1024' as const }
   const res = await withProviderError(() => generateImage({
     model: resolveModel(route, modelId, 'image'),
     prompt,
     n: 1,
-    size: '1024x1024',
+    ...dimensions,
     providerOptions,
   }))
   if (!res.image?.base64) throw new Error('No image data returned')
@@ -823,6 +836,7 @@ imageGenRoutes.get('/settings', c => {
     })),
     anthropicKey: !!process.env.ANTHROPIC_API_KEY,
     openaiKey:    !!process.env.OPENAI_API_KEY,
+    googleKey:    !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
   })
 })
 // Stages CATALOG_HOST_PATH/IMAGES_HOST_PATH into .env for the *next* container recreate —

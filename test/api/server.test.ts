@@ -261,14 +261,20 @@ describe('GET /api/config and /api/settings', () => {
 
   it('reports which keys are configured without disclosing them', async () => {
     process.env.ANTHROPIC_API_KEY = 'super-secret-value'
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'another-secret-value'
     delete process.env.OPENAI_API_KEY
 
     const settings = await (await app.request('/api/settings')).json() as any
-    expect(settings).toMatchObject({ anthropicKey: true, openaiKey: false })
+    expect(settings).toMatchObject({ anthropicKey: true, openaiKey: false, googleKey: true })
     expect(settings.catalogPath).toBe(ws.catalog)
     expect(JSON.stringify(settings)).not.toContain('super-secret-value')
+    expect(JSON.stringify(settings)).not.toContain('another-secret-value')
+    // the direct route lists the Gemini key alongside the other two
+    const direct = settings.routes.find((r: any) => r.key === 'direct')
+    expect(direct.keys).toEqual({ OPENAI_API_KEY: false, ANTHROPIC_API_KEY: true, GOOGLE_GENERATIVE_AI_API_KEY: true })
 
     delete process.env.ANTHROPIC_API_KEY
+    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY
   })
 
   // SHOW_BRAND isn't set anywhere in this file's env, so this is the off/default case —
