@@ -8,6 +8,7 @@ import {
 import {
   installFetchStub, anthropicText, anthropicError, sentSystem, sentMessage,
   openaiImage, openaiImageUrl, openaiError, openaiChat, openaiResponses, htmlPage, type FetchStub,
+  geminiImage, geminiText, geminiError,
 } from '../helpers/fetch-stub.ts'
 import sharp from 'sharp'
 
@@ -26,6 +27,7 @@ const { app } = await import('../../src/server.ts')
 
 const OPENAI = /api\.openai\.com/
 const ANTHROPIC = /api\.anthropic\.com/
+const GOOGLE = /generativelanguage\.googleapis\.com/
 
 let stub: FetchStub
 
@@ -715,6 +717,7 @@ describe('provider routing', () => {
     delete process.env.OPENROUTER_API_KEY
     delete process.env.LLM_BASE_URL
     delete process.env.LLM_API_KEY
+    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY
   })
 
   it('sends the bare model name to the vendor on the direct route', async () => {
@@ -787,7 +790,7 @@ describe('provider routing', () => {
     writeConfig(ws, { provider: 'direct', textModelFast: 'mistral/mistral-small' })
     const res = await app.request('/api/tile-001/enrich', json({}))
     expect(res.status).toBe(500)
-    expect((await res.json() as any).error).toContain('only knows openai/* and anthropic/*')
+    expect((await res.json() as any).error).toContain('only knows openai/*, anthropic/* and google/*')
     expect(stub.calls).toHaveLength(0)
   })
 
@@ -818,6 +821,87 @@ describe('provider routing', () => {
     const call = stub.callsTo(OPENAI)[0]
     expect(call.url).toBe('https://api.openai.com/v1/responses')
     expect(call.body.model).toBe('gpt-4o-mini')
+  })
+
+  // Google on the direct route: Gemini's image models are Gemini models with image output,
+  // reached through :generateContent rather than an images endpoint. The app still calls
+  // generateImage — the SDK's Google image model makes that call — so what matters here is
+  // where it went, with which key, asking for an image at 1:1, and that the inline image
+  // that came back went through the same whitening and write as any other.
+  it('generates an image with a Gemini model through generateContent on the direct route', async () => {
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-google-key'
+    writeConfig(ws, { provider: 'direct', imageModel: 'google/gemini-3.1-flash-image-preview' })
+    stub.on(GOOGLE, () => geminiImage(nearWhite))
+    const res = await app.request('/api/tile-001/generate', json({}))
+    expect(res.status).toBe(200)
+
+    const call = stub.callsTo(GOOGLE)[0]
+    expect(call.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent')
+    expect(call.headers['x-goog-api-key']).toBe('test-google-key')
+    expect(call.body.generationConfig).toMatchObject({ responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } })
+    expect(call.body.contents[0].parts).toEqual([{ text: 'home shot: Zellige, slim' }])
+    expect(stub.callsTo(OPENAI)).toHaveLength(0)
+
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(true)
+    const { data } = await sharp(join(ws.images, 'tile-001.jpg')).raw().toBuffer({ resolveWithObject: true })
+    expect([data[0], data[1], data[2]]).toEqual([255, 255, 255])
+  })
+
+  it('edits ("Tweak") with a Gemini model by sending the current image along', async () => {
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-google-key'
+    writeConfig(ws, { provider: 'direct', imageModel: 'google/gemini-3.1-flash-image-preview' })
+    await writeImage(ws, 'tile-001.jpg')
+    stub.on(GOOGLE, () => geminiImage(nearWhite))
+    expect((await app.request('/api/tile-001/tweak', json({ note: 'make it warmer' }))).status).toBe(200)
+
+    const parts = stub.callsTo(GOOGLE)[0].body.contents[0].parts
+    expect(parts[0].text).toBe('make it warmer. Keep the white background, framing, and composition otherwise the same.')
+    expect(parts[1].inlineData).toMatchObject({ mimeType: 'image/png' })
+    expect(parts[1].inlineData.data.length).toBeGreaterThan(0)
+    expect(imageExists(ws, 'tile-001-tweak.jpg')).toBe(true)
+  })
+
+  // The other half of "one provider is enough" for Google: a Gemini key alone covers text too.
+  it('runs text through Google alone on the direct route', async () => {
+    delete process.env.OPENAI_API_KEY
+    delete process.env.ANTHROPIC_API_KEY
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-google-key'
+    writeConfig(ws, { provider: 'direct', textModelFast: 'google/gemini-2.5-flash' })
+    stub.on(GOOGLE, () => geminiText('a prompt'))
+    expect((await app.request('/api/tile-001/enrich', json({}))).status).toBe(200)
+    const call = stub.callsTo(GOOGLE)[0]
+    expect(call.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent')
+    expect(readFixtureFile(ws, 'algolia-tile.json').hits[0].imagePrompt).toBe('a prompt')
+  })
+
+  it('names the missing Gemini key rather than failing at the network', async () => {
+    writeConfig(ws, { provider: 'direct', imageModel: 'google/gemini-3.1-flash-image-preview' })
+    const res = await app.request('/api/tile-001/generate', json({}))
+    expect(res.status).toBe(500)
+    expect((await res.json() as any).error).toBe('GOOGLE_GENERATIVE_AI_API_KEY not set')
+    expect(stub.calls).toHaveLength(0)
+  })
+
+  // The SDK's Google image model only accepts gemini-* IDs and refuses any other (Imagen)
+  // before calling out. The refusal reaches the operator as the SDK's own message.
+  it('refuses an Imagen model ID without calling out', async () => {
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-google-key'
+    writeConfig(ws, { provider: 'direct', imageModel: 'google/imagen-4.0-generate-001' })
+    const res = await app.request('/api/tile-001/generate', json({}))
+    expect(res.status).toBe(500)
+    expect((await res.json() as any).error).toMatch(/Gemini/)
+    expect(stub.calls).toHaveLength(0)
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(false)
+  })
+
+  it("surfaces Google's own error message and writes nothing", async () => {
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-google-key'
+    writeConfig(ws, { provider: 'direct', imageModel: 'google/gemini-3.1-flash-image-preview' })
+    stub.on(GOOGLE, () => geminiError('API key not valid. Please pass a valid API key.'))
+    const res = await app.request('/api/tile-001/generate', json({}))
+    expect(res.status).toBe(500)
+    expect((await res.json() as any).error).toBe('API key not valid. Please pass a valid API key.')
+    expect(imageExists(ws, 'tile-001.jpg')).toBe(false)
   })
 
   // Anthropic's server-side web search has no equivalent on the aggregator routes. Failing

@@ -14,7 +14,7 @@
 ## Requirements
 
 - Docker, or Node.js 20.19+ if running without it.
-- An API key for at least one model provider. The default configuration uses Anthropic for text and OpenAI for images, so that means both keys — see [Models and providers](README.md#models-and-providers) for single-provider setups.
+- An API key for at least one model provider. The default configuration uses Anthropic for text and OpenAI for images, so that means both keys; a single OpenAI key or a single Google (Gemini API) key also covers everything — see [Models and providers](README.md#models-and-providers) for single-provider setups.
 
 ## 1. Get the code
 
@@ -35,6 +35,14 @@ Edit `.env` and fill in the keys for the route you plan to use. For the default 
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 ```
+
+Or Google alone, with a Gemini API key from Google AI Studio:
+
+```
+GOOGLE_GENERATIVE_AI_API_KEY=...
+```
+
+and, in Settings → Models, `google/*` IDs for all three models (a Gemini text model and a Gemini image model — see [Models and providers](README.md#models-and-providers)).
 
 Other routes (Vercel AI Gateway, OpenRouter, any OpenAI-compatible endpoint) need one key instead of two. The full variable list is in the [README](README.md#environment-variables).
 
@@ -111,7 +119,9 @@ All bind-mounted from the checkout under Docker, so you can read and edit them f
 
 ## Troubleshooting
 
-**"No such imageModel" or a message about Anthropic image models** — Anthropic publishes none. Pair it with an `openai/*` image model, or switch routes.
+**"No such imageModel" or a message about Anthropic image models** — Anthropic publishes none. Pair it with an `openai/*` or `google/*` image model, or switch routes.
+
+**"Google image models other than Gemini are no longer supported"** — Imagen IDs are refused; use a Gemini image model ID (`google/gemini-…-image…`).
 
 **Schema lookup by web search refuses to run** — it needs an `anthropic/*` text model on the `direct` route; it uses Anthropic's server-side web search, which the aggregator routes don't carry. Pasting or linking a schema works everywhere.
 
