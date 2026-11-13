@@ -183,6 +183,7 @@ test('shows the provider routes and the keys each one needs', async ({ page }) =
   await expect(provider.locator('option')).toHaveCount(4)
   await expect(provider).toHaveValue('direct')
   await expect(page.locator('#sRouteKeys')).toContainText('ANTHROPIC_API_KEY')
+  await expect(page.locator('#sRouteKeys')).toContainText('GOOGLE_GENERATIVE_AI_API_KEY')
 
   await provider.selectOption('openrouter')
   await expect(page.locator('#sRouteKeys')).toContainText('OPENROUTER_API_KEY')

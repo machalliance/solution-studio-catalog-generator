@@ -27,7 +27,7 @@ runtime image, so redistributing that image redistributes them too. The followin
 licensed Apache-2.0 and carry their own copyright/attribution requirements independent of
 this repository's own MIT license:
 
-@ai-sdk/anthropic, @ai-sdk/gateway, @ai-sdk/openai, @ai-sdk/openai-compatible,
+@ai-sdk/anthropic, @ai-sdk/gateway, @ai-sdk/google, @ai-sdk/openai, @ai-sdk/openai-compatible,
 @ai-sdk/provider, @ai-sdk/provider-utils, @img/sharp-linux-x64, @img/sharp-linuxmusl-x64,
 @openrouter/ai-sdk-provider, @vercel/oidc, @workflow/serde, ai, b4a, bare-events, bare-fs,
 bare-path, bare-stream, bare-url, crc-32, detect-libc, events-universal, readdir-glob, sharp,
